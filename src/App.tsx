@@ -20,7 +20,7 @@ function App() {
   const [scenarioJson, setScenarioJson] = useState(() => {
     const saved = localStorage.getItem("scenario");
     return saved ?? JSON.stringify(defaultScenario, null, 2);
-});
+  });
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,6 +75,28 @@ function App() {
       <button onClick={runSimulation} style={{ marginTop: 20 }}>
         Run Simulation
       </button>
+
+      <div style={{ marginTop: "10px" }}>
+        <button
+          onClick={() => {
+            setScenarioJson(JSON.stringify(defaultScenario, null, 2));
+            localStorage.setItem("scenario", JSON.stringify(defaultScenario, null, 2));
+          }}
+          style={{ marginRight: "10px" }}
+        >
+          Reset to Default
+        </button>
+
+        <button
+          onClick={() => {
+            setScenarioJson("{\n  \"name\": \"new-scenario\",\n  \"nodes\": [],\n  \"edges\": []\n}");
+            localStorage.setItem("scenario", "{ \"name\": \"new-scenario\", \"nodes\": [], \"edges\": [] }");
+          }}
+        >
+          New Scenario
+        </button>
+      </div>
+
 
       {simulationResult && (
         <pre style={{ marginTop: 15, background: "#eee", padding: 10 }}>
