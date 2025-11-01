@@ -2,22 +2,25 @@ import { useState } from 'react'
 
 import './App.css'
 
-const sampleScenario = {
-  name : "demo-scenario",
-  nodes : [
-    {id: "client", type: "client"},
-    {id: "api", type: "service"},
-    {id: "db", type: "database"}
+const defaultScenario = {
+  name: "demo-scenario",
+  nodes: [
+    { id: "client", type: "client" },
+    { id: "api", type: "service" },
+    { id: "db", type: "database" }
   ],
-  edges : [
-    {from: "client", to: "api"},
-    {from: "api", to: "db"}
+  edges: [
+    { from: "client", to: "api" },
+    { from: "api", to: "db" }
   ]
 };
 
 function App() {
   const [status, setStatus] = useState("Idle");
-  const [scenarioJson, setScenarioJson] = useState(JSON.stringify(sampleScenario, null, 2));
+  const [scenarioJson, setScenarioJson] = useState(() => {
+    const saved = localStorage.getItem("scenario");
+    return saved ?? JSON.stringify(defaultScenario, null, 2);
+});
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,17 +40,17 @@ function App() {
   };
 
   const runSimulation = async () => {
-    try{
+    try {
       const parsed = JSON.parse(scenarioJson);
       const res = await fetch("http://localhost:8080/simulate", {
         method: "POST",
-        headers : {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed)
       });
       const data = await res.json();
       setSimulationResult(data);
       setError(null);
-    }catch(err: any){
+    } catch (err: any) {
       setError(err.message || "Invalid JSON");
       setSimulationResult(null);
 
@@ -61,10 +64,13 @@ function App() {
       <p style={{ marginTop: 15 }}>{status}</p>
 
       <textarea
-  style={{ width: "100%", height: "200px", marginTop: "20px" }}
-  value={scenarioJson}
-  onChange={(e) => setScenarioJson(e.target.value)}
-/>
+        style={{ width: "100%", height: "200px", marginTop: "20px" }}
+        value={scenarioJson}
+        onChange={(e) => {
+          setScenarioJson(e.target.value);
+          localStorage.setItem("scenario", e.target.value);
+        }}
+      />
 
       <button onClick={runSimulation} style={{ marginTop: 20 }}>
         Run Simulation
@@ -72,13 +78,13 @@ function App() {
 
       {simulationResult && (
         <pre style={{ marginTop: 15, background: "#eee", padding: 10 }}>
-{JSON.stringify(simulationResult, null, 2)}
+          {JSON.stringify(simulationResult, null, 2)}
         </pre>
       )}
 
       {error && (
-  <p style={{ color: "red" }}>JSON error: {error}</p>
-)}
+        <p style={{ color: "red" }}>JSON error: {error}</p>
+      )}
 
     </div>
   )
