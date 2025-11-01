@@ -17,7 +17,9 @@ const sampleScenario = {
 
 function App() {
   const [status, setStatus] = useState("Idle");
+  const [scenarioJson, setScenarioJson] = useState(JSON.stringify(sampleScenario, null, 2));
   const [simulationResult, setSimulationResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const checkEngine = async () => {
     try {
@@ -36,15 +38,19 @@ function App() {
 
   const runSimulation = async () => {
     try{
+      const parsed = JSON.parse(scenarioJson);
       const res = await fetch("http://localhost:8080/simulate", {
         method: "POST",
         headers : {"Content-Type": "application/json"},
-        body: JSON.stringify(sampleScenario)
+        body: JSON.stringify(parsed)
       });
       const data = await res.json();
       setSimulationResult(data);
-    }catch(err){
-      setSimulationResult({ error: "Engine unreachable" });
+      setError(null);
+    }catch(err: any){
+      setError(err.message || "Invalid JSON");
+      setSimulationResult(null);
+
     }
   };
 
@@ -53,6 +59,12 @@ function App() {
       <h1>ArchBench</h1>
       <button onClick={checkEngine}>Check Engine</button>
       <p style={{ marginTop: 15 }}>{status}</p>
+
+      <textarea
+  style={{ width: "100%", height: "200px", marginTop: "20px" }}
+  value={scenarioJson}
+  onChange={(e) => setScenarioJson(e.target.value)}
+/>
 
       <button onClick={runSimulation} style={{ marginTop: 20 }}>
         Run Simulation
@@ -63,6 +75,11 @@ function App() {
 {JSON.stringify(simulationResult, null, 2)}
         </pre>
       )}
+
+      {error && (
+  <p style={{ color: "red" }}>JSON error: {error}</p>
+)}
+
     </div>
   )
 }
