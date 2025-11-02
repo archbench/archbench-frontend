@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import NodeParameters from './components/NodeParameters';
+import MetricsCards from './components/MetricsCards';
 import './App.css'
 
 const defaultScenario = {
@@ -84,6 +85,8 @@ function App() {
       <button onClick={runSimulation} style={{ marginTop: 20 }}>
         Run Simulation
       </button>
+
+      <MetricsCards result={simulationResult} />
 
       <div style={{ marginTop: "10px" }}>
         <button
