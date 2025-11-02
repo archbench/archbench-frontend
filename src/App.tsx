@@ -1,5 +1,5 @@
 import { useState } from 'react'
-
+import NodeParameters from './components/NodeParameters';
 import './App.css'
 
 const defaultScenario = {
@@ -71,6 +71,15 @@ function App() {
           localStorage.setItem("scenario", e.target.value);
         }}
       />
+
+      <NodeParameters
+        scenarioJson={scenarioJson}
+        onScenarioChange={(json) => {
+          setScenarioJson(json);
+          localStorage.setItem("scenario", json);
+        }}
+      />
+
 
       <button onClick={runSimulation} style={{ marginTop: 20 }}>
         Run Simulation
