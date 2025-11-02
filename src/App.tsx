@@ -3,24 +3,65 @@ import NodeParameters from './components/NodeParameters';
 import MetricsCards from './components/MetricsCards';
 import './App.css'
 
-const defaultScenario = {
-  name: "demo-scenario",
-  nodes: [
-    { id: "client", type: "client" },
-    { id: "api", type: "service" },
-    { id: "db", type: "database" }
-  ],
-  edges: [
-    { from: "client", to: "api" },
-    { from: "api", to: "db" }
-  ]
+const presets: Record<string, any> = {
+  "URL Shortener": {
+    name: "url-shortener",
+    nodes: [
+      { id: "client", type: "client" },
+      { id: "api", type: "service" },
+      { id: "cache", type: "cache" },
+      { id: "db", type: "database" }
+    ],
+    edges: [
+      { from: "client", to: "api" },
+      { from: "api", to: "cache" },
+      { from: "api", to: "db" }
+    ]
+  },
+  "Chat DM": {
+    name: "chat-dm",
+    nodes: [
+      { id: "client", type: "client" },
+      { id: "gateway", type: "service" },
+      { id: "queue", type: "queue" },
+      { id: "worker", type: "service" },
+      { id: "store", type: "database" }
+    ],
+    edges: [
+      { from: "client", to: "gateway" },
+      { from: "gateway", to: "queue" },
+      { from: "queue", to: "worker" },
+      { from: "worker", to: "store" }
+    ]
+  },
+  "Checkout": {
+    name: "checkout",
+    nodes: [
+      { id: "client", type: "client" },
+      { id: "api", type: "service" },
+      { id: "payments", type: "service" },
+      { id: "orders-db", type: "database" },
+      { id: "cache", type: "cache" }
+    ],
+    edges: [
+      { from: "client", to: "api" },
+      { from: "api", to: "payments" },
+      { from: "api", to: "orders-db" },
+      { from: "api", to: "cache" }
+    ]
+  },
+  "Blank Scenario": {
+    name: "new-scenario",
+    nodes: [],
+    edges: []
+  }
 };
 
 function App() {
   const [status, setStatus] = useState("Idle");
   const [scenarioJson, setScenarioJson] = useState(() => {
     const saved = localStorage.getItem("scenario");
-    return saved ?? JSON.stringify(defaultScenario, null, 2);
+    return saved ?? JSON.stringify(presets["Blank Scenario"], null, 2);
   });
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +132,7 @@ function App() {
       <div style={{ marginTop: "10px" }}>
         <button
           onClick={() => {
+            const defaultScenario = presets["URL Shortener"]; // or choose another default
             setScenarioJson(JSON.stringify(defaultScenario, null, 2));
             localStorage.setItem("scenario", JSON.stringify(defaultScenario, null, 2));
           }}
