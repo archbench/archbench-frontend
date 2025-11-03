@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import NodeParameters from './components/NodeParameters';
 import MetricsCards from './components/MetricsCards';
+import ErrorBanner from './components/ErrorBanner';
 import './App.css'
 
 const presets: Record<string, any> = {
@@ -89,6 +90,15 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed)
       });
+
+      if (!res.ok) {
+        const problem = await res.json().catch(() => ({}));
+        const msg = problem.detail || problem.title || `HTTP ${res.status}`;
+        setError(msg);
+        setSimulationResult(null);
+        return;
+      }
+
       const data = await res.json();
       setSimulationResult(data);
       setError(null);
@@ -151,17 +161,13 @@ function App() {
         </button>
       </div>
 
+      <ErrorBanner message={error} />
 
       {simulationResult && (
         <pre style={{ marginTop: 15, background: "#eee", padding: 10 }}>
           {JSON.stringify(simulationResult, null, 2)}
         </pre>
       )}
-
-      {error && (
-        <p style={{ color: "red" }}>JSON error: {error}</p>
-      )}
-
     </div>
   )
 }
