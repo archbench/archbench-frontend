@@ -3,6 +3,8 @@ import NodeParameters from './components/NodeParameters';
 import MetricsCards from './components/MetricsCards';
 import ErrorBanner from './components/ErrorBanner';
 import './App.css'
+import { getHealth, simulate } from './api/client';
+import type { Scenario, SimulationResult } from './types/api';
 
 const presets: Record<string, any> = {
   "URL Shortener": {
@@ -64,15 +66,13 @@ function App() {
     const saved = localStorage.getItem("scenario");
     return saved ?? JSON.stringify(presets["Blank Scenario"], null, 2);
   });
-  const [simulationResult, setSimulationResult] = useState<any>(null);
+  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const checkEngine = async () => {
     try {
-      const res = await fetch("http://localhost:8080/health");
-      const text = await res.text();
-
-      if (text.trim().toLowerCase() === "ok") {
+      const text = await getHealth();
+      if (text.toLowerCase() === "ok") {
         setStatus("✅ Engine connected");
       } else {
         setStatus("⚠️ Unexpected response");
@@ -84,28 +84,19 @@ function App() {
 
   const runSimulation = async () => {
     try {
-      const parsed = JSON.parse(scenarioJson);
-      const res = await fetch("http://localhost:8080/simulate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed)
-      });
-
-      if (!res.ok) {
-        const problem = await res.json().catch(() => ({}));
-        const msg = problem.detail || problem.title || `HTTP ${res.status}`;
-        setError(msg);
-        setSimulationResult(null);
-        return;
-      }
-
-      const data = await res.json();
-      setSimulationResult(data);
+      const parsed = JSON.parse(scenarioJson) as Scenario;
+      const result = await simulate(parsed);
+      setSimulationResult(result);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || "Invalid JSON");
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        setError("Invalid JSON");
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Unexpected error");
+      }
       setSimulationResult(null);
-
     }
   };
 

@@ -1,12 +1,7 @@
+import type { SimulationResult } from "../types/api";
+
 type Props = {
-    result : {
-        latencyMsP50?: number;
-        latencyMsP95?: number;
-        throughputRps?: number;
-        costPerHour?: number;
-        status?: string;
-        [k: string]: any;
-    } | null;
+    result: SimulationResult | null;
 };
 
 const EXPLAIN = {
