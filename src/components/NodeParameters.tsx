@@ -10,6 +10,8 @@ import type {
     DbColumnType,
 } from "../types/api";
 
+type NumericField = "latencyMs" | "varianceFactor" | "capacityRps" | "failureRate" | "costPerHour";
+
 type Props = {
     scenarioJson: string;
     onScenarioChange: (newJson: string) => void;
@@ -22,30 +24,35 @@ export default function NodeParameters({ scenarioJson, onScenarioChange }: Props
         return <div style={{ marginTop: 16, color: "red" }}>Invalid JSON — fix the editor to edit parameters.</div>;
     }
 
-    const handleChange = (idx: number, field: keyof Node, value: string) => {
-        const next = structuredClone(scenario) as Scenario;
+    const handleChange = (idx: number, field: NumericField, value: string) => {
+        const next = structuredClone(scenario);
         const node = next.nodes[idx];
-
-        const numericFields: (keyof Node)[] = ["latencyMs", "varianceFactor", "capacityRps", "failureRate", "costPerHour"];
-        if (numericFields.includes(field)) {
-            const v = value.trim();
-            if (v === "") {
-                delete (node as any)[field];
-            } else {
-                const n = Number(v);
-                (node as any)[field] = isNaN(n) ? undefined : n;
-            }
-        } else {
-            (node as any)[field] = value;
+        if (!node) {
+            return;
         }
 
+        const trimmed = value.trim();
+        if (trimmed === "") {
+            const updated: Node = { ...node };
+            delete updated[field];
+            next.nodes[idx] = updated;
+        } else {
+            const parsed = Number(trimmed);
+            if (Number.isNaN(parsed)) {
+                const updated: Node = { ...node };
+                delete updated[field];
+                next.nodes[idx] = updated;
+            } else {
+                next.nodes[idx] = { ...node, [field]: parsed } as Node;
+            }
+        }
         onScenarioChange(JSON.stringify(next, null, 2));
-    }
+    };
 
     const updateDbConfig = (idx: number, mutate: (config: DbConfig) => void) => {
-        const next = structuredClone(scenario) as Scenario;
+        const next = structuredClone(scenario);
         const node = next.nodes[idx];
-        const config = structuredClone(node.dbConfig ?? {}) as DbConfig;
+        const config: DbConfig = node.dbConfig ? structuredClone(node.dbConfig) : {};
         mutate(config);
         const sanitized = sanitizeDbConfig(config);
         if (sanitized) {
@@ -162,7 +169,7 @@ function Field({
     placeholder,
     onChange,
 }: {
-    label: string;
+    label: NumericField;
     value: number | string;
     placeholder?: string;
     onChange: (v: string) => void;

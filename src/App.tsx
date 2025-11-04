@@ -6,7 +6,7 @@ import './App.css'
 import { getHealth, simulate } from './api/client';
 import type { Scenario, SimulationResult } from './types/api';
 
-const presets: Record<string, any> = {
+const presets: Record<string, Scenario> = {
   "URL Shortener": {
     name: "url-shortener",
     nodes: [
@@ -77,7 +77,7 @@ function App() {
       } else {
         setStatus("⚠️ Unexpected response");
       }
-    } catch (err) {
+    } catch {
       setStatus("❌ Engine unreachable");
     }
   };
