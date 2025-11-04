@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 import NodeParameters from './components/NodeParameters';
 import MetricsCards from './components/MetricsCards';
 import ErrorBanner from './components/ErrorBanner';
 import './App.css'
 import { getHealth, simulate } from './api/client';
 import type { Scenario, SimulationResult } from './types/api';
+import type { Snapshot } from './types/snapshots';
+import ComparePanel from './components/ComparePanel';
+import { SNAP_A_KEY, SNAP_B_KEY, loadSnapshot, saveSnapshot } from './utils/snapshots';
 
 const presets: Record<string, Scenario> = {
   "URL Shortener": {
@@ -68,6 +72,13 @@ function App() {
   });
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [snapshotA, setSnapshotA] = useState<Snapshot | null>(null);
+  const [snapshotB, setSnapshotB] = useState<Snapshot | null>(null);
+
+  useEffect(() => {
+    setSnapshotA(loadSnapshot(SNAP_A_KEY));
+    setSnapshotB(loadSnapshot(SNAP_B_KEY));
+  }, []);
 
   const checkEngine = async () => {
     try {
@@ -98,6 +109,43 @@ function App() {
       }
       setSimulationResult(null);
     }
+  };
+
+  const saveSnapshotForKey = (
+    key: string,
+    setter: Dispatch<SetStateAction<Snapshot | null>>
+  ) => {
+    if (!simulationResult) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(scenarioJson) as Scenario;
+      const snap: Snapshot = {
+        name: parsed.name || "Unnamed",
+        scenario: parsed,
+        result: simulationResult,
+        savedAt: new Date().toISOString(),
+      };
+      saveSnapshot(key, snap);
+      setter(snap);
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        window.alert("Scenario JSON is invalid. Fix the editor before saving a snapshot.");
+      } else {
+        console.error("Failed to save snapshot", err);
+      }
+    }
+  };
+
+  const restoreSnapshot = (snap: Snapshot | null) => {
+    if (!snap) {
+      return;
+    }
+    const nextJson = JSON.stringify(snap.scenario, null, 2);
+    setScenarioJson(nextJson);
+    localStorage.setItem("scenario", nextJson);
+    setSimulationResult(null);
+    setError(null);
   };
 
   return (
@@ -152,6 +200,33 @@ function App() {
         </button>
       </div>
 
+      <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        <button
+          onClick={() => saveSnapshotForKey(SNAP_A_KEY, setSnapshotA)}
+          disabled={!simulationResult}
+        >
+          Save Snapshot A
+        </button>
+        <button
+          onClick={() => restoreSnapshot(snapshotA)}
+          disabled={!snapshotA}
+        >
+          Restore Snapshot A
+        </button>
+        <button
+          onClick={() => saveSnapshotForKey(SNAP_B_KEY, setSnapshotB)}
+          disabled={!simulationResult}
+        >
+          Save Snapshot B
+        </button>
+        <button
+          onClick={() => restoreSnapshot(snapshotB)}
+          disabled={!snapshotB}
+        >
+          Restore Snapshot B
+        </button>
+      </div>
+
       <ErrorBanner message={error} />
 
       {simulationResult && (
@@ -159,6 +234,10 @@ function App() {
           {JSON.stringify(simulationResult, null, 2)}
         </pre>
       )}
+
+      {snapshotA && snapshotB ? (
+        <ComparePanel snapA={snapshotA} snapB={snapshotB} />
+      ) : null}
     </div>
   )
 }
