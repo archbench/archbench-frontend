@@ -1,6 +1,8 @@
 
 # React + TypeScript + Vite
 
+> Tailwind installed; gradual migration underway. Tokens now live in `tailwind.config.js` and the Header is the first component migrated.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
