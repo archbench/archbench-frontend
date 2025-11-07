@@ -25,10 +25,16 @@ export default function WorkloadInspector({ scenarioJson, onScenarioChange }: Pr
       }
     } else {
       const asNumber = Number(trimmed);
-      if (!next.workload) {
-        next.workload = {};
+      if (Number.isNaN(asNumber)) {
+        if (next.workload) {
+          delete next.workload[field];
+        }
+      } else {
+        if (!next.workload) {
+          next.workload = {};
+        }
+        next.workload[field] = asNumber;
       }
-      next.workload[field] = Number.isNaN(asNumber) ? undefined : asNumber;
     }
     if (next.workload && !next.workload.rps && !next.workload.p95TargetMs) {
       delete next.workload;
