@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import NodeParameters from './components/NodeParameters';
 import MetricsCards from './components/MetricsCards';
@@ -10,6 +10,10 @@ import type { Snapshot } from './types/snapshots';
 import ComparePanel from './components/ComparePanel';
 import { SNAP_A_KEY, SNAP_B_KEY, loadSnapshot, saveSnapshot } from './utils/snapshots';
 import Board from './components/Board';
+import AppShell from './components/layout/AppShell';
+import Header from './components/layout/Header';
+import type { RunStatus } from './components/common/StatusPill';
+import { safeParse } from './utils/json';
 
 const presets: Record<string, Scenario> = {
   "URL Shortener": {
@@ -66,7 +70,7 @@ const presets: Record<string, Scenario> = {
 };
 
 function App() {
-  const [status, setStatus] = useState("Idle");
+  const [engineStatus, setEngineStatus] = useState("Engine not checked");
   const [scenarioJson, setScenarioJson] = useState(() => {
     const saved = localStorage.getItem("scenario");
     return saved ?? JSON.stringify(presets["Blank Scenario"], null, 2);
@@ -75,6 +79,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [snapshotA, setSnapshotA] = useState<Snapshot | null>(null);
   const [snapshotB, setSnapshotB] = useState<Snapshot | null>(null);
+  const [runStatus, setRunStatus] = useState<RunStatus>("idle");
+  const [runMessage, setRunMessage] = useState("Idle");
+  const compareRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setSnapshotA(loadSnapshot(SNAP_A_KEY));
@@ -86,35 +93,54 @@ function App() {
     localStorage.setItem("scenario", json);
   }, []);
 
+  const scenario = useMemo(() => safeParse<Scenario>(scenarioJson), [scenarioJson]);
+  const scenarioName = scenario?.name ?? "Unnamed scenario";
+
   const checkEngine = async () => {
     try {
       const text = await getHealth();
       if (text.toLowerCase() === "ok") {
-        setStatus("✅ Engine connected");
+        setEngineStatus("Engine connected");
       } else {
-        setStatus("⚠️ Unexpected response");
+        setEngineStatus("Unexpected response");
       }
     } catch {
-      setStatus("❌ Engine unreachable");
+      setEngineStatus("Engine unreachable");
     }
   };
 
   const runSimulation = async () => {
+    setRunStatus("running");
+    setRunMessage("Running simulation…");
     try {
       const parsed = JSON.parse(scenarioJson) as Scenario;
       const result = await simulate(parsed);
       setSimulationResult(result);
       setError(null);
+      setRunStatus("idle");
+      setRunMessage("Simulation complete");
     } catch (err) {
+      setRunStatus("error");
       if (err instanceof SyntaxError) {
         setError("Invalid JSON");
+        setRunMessage("Invalid JSON");
       } else if (err instanceof Error) {
         setError(err.message);
+        setRunMessage(err.message);
       } else {
         setError("Unexpected error");
+        setRunMessage("Unexpected error");
       }
       setSimulationResult(null);
     }
+  };
+
+  const handleNewScenario = () => {
+    persistScenario(JSON.stringify(presets["Blank Scenario"], null, 2));
+    setSimulationResult(null);
+    setError(null);
+    setRunStatus("idle");
+    setRunMessage("Ready");
   };
 
   const saveSnapshotForKey = (
@@ -153,96 +179,75 @@ function App() {
     setError(null);
   };
 
+  const handleCompareClick = () => {
+    compareRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const disableSave = !simulationResult;
+
   return (
-    <div style={{ padding: 20, fontSize: 18 }}>
-      <h1>ArchBench</h1>
-      <button onClick={checkEngine}>Check Engine</button>
-      <p style={{ marginTop: 15 }}>{status}</p>
-
-      <textarea
-        style={{ width: "100%", height: "200px", marginTop: "20px" }}
-        value={scenarioJson}
-        onChange={(e) => {
-          persistScenario(e.target.value);
-        }}
-      />
-
-      <Board
-        scenarioJson={scenarioJson}
-        onScenarioChange={persistScenario}
-      />
-
-      <NodeParameters
-        scenarioJson={scenarioJson}
-        onScenarioChange={persistScenario}
-      />
-
-
-      <button onClick={runSimulation} style={{ marginTop: 20 }}>
-        Run Simulation
-      </button>
-
-      <MetricsCards result={simulationResult} />
-
-      <div style={{ marginTop: "10px" }}>
-        <button
-          onClick={() => {
-            const defaultScenario = presets["URL Shortener"];
-            persistScenario(JSON.stringify(defaultScenario, null, 2));
-          }}
-          style={{ marginRight: "10px" }}
-        >
-          Reset to Default
-        </button>
-
-        <button
-          onClick={() => {
-            persistScenario("{\n  \"name\": \"new-scenario\",\n  \"nodes\": [],\n  \"edges\": []\n}");
-          }}
-        >
-          New Scenario
-        </button>
+    <AppShell
+      header={
+        <Header
+          scenarioName={scenarioName}
+          status={runStatus}
+          statusMessage={runMessage}
+          disableSave={disableSave}
+          onCheckEngine={checkEngine}
+          onRun={runSimulation}
+          onNewScenario={handleNewScenario}
+          onSaveSnapshotA={() => saveSnapshotForKey(SNAP_A_KEY, setSnapshotA)}
+          onSaveSnapshotB={() => saveSnapshotForKey(SNAP_B_KEY, setSnapshotB)}
+          onCompare={handleCompareClick}
+        />
+      }
+      footer={
+        <div>
+          <MetricsCards result={simulationResult} />
+          <div className="snapshot-actions">
+            <button type="button" onClick={() => restoreSnapshot(snapshotA)} disabled={!snapshotA}>
+              Restore Snapshot A
+            </button>
+            <button type="button" onClick={() => restoreSnapshot(snapshotB)} disabled={!snapshotB}>
+              Restore Snapshot B
+            </button>
+          </div>
+          {snapshotA && snapshotB ? (
+            <div ref={compareRef}>
+              <ComparePanel snapA={snapshotA} snapB={snapshotB} />
+            </div>
+          ) : null}
+        </div>
+      }
+    >
+      <div className="engine-status">{engineStatus}</div>
+      <div className="board-section">
+        <Board
+          scenarioJson={scenarioJson}
+          onScenarioChange={persistScenario}
+        />
       </div>
 
-      <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        <button
-          onClick={() => saveSnapshotForKey(SNAP_A_KEY, setSnapshotA)}
-          disabled={!simulationResult}
-        >
-          Save Snapshot A
-        </button>
-        <button
-          onClick={() => restoreSnapshot(snapshotA)}
-          disabled={!snapshotA}
-        >
-          Restore Snapshot A
-        </button>
-        <button
-          onClick={() => saveSnapshotForKey(SNAP_B_KEY, setSnapshotB)}
-          disabled={!simulationResult}
-        >
-          Save Snapshot B
-        </button>
-        <button
-          onClick={() => restoreSnapshot(snapshotB)}
-          disabled={!snapshotB}
-        >
-          Restore Snapshot B
-        </button>
+      <div className="inspector-section">
+        <NodeParameters
+          scenarioJson={scenarioJson}
+          onScenarioChange={persistScenario}
+        />
+
+        <div className="json-editor">
+          <label htmlFor="scenario-json">Scenario JSON</label>
+          <textarea
+            id="scenario-json"
+            value={scenarioJson}
+            onChange={(e) => {
+              persistScenario(e.target.value);
+            }}
+          />
+        </div>
       </div>
 
       <ErrorBanner message={error} />
-
-      {simulationResult && (
-        <pre style={{ marginTop: 15, background: "#eee", padding: 10 }}>
-          {JSON.stringify(simulationResult, null, 2)}
-        </pre>
-      )}
-
-      {snapshotA && snapshotB ? (
-        <ComparePanel snapA={snapshotA} snapB={snapshotB} />
-      ) : null}
-    </div>
+    </AppShell>
   )
 }
 
