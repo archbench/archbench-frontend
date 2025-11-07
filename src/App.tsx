@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import NodeParameters from './components/NodeParameters';
 import MetricsCards from './components/MetricsCards';
@@ -9,6 +9,7 @@ import type { Scenario, SimulationResult } from './types/api';
 import type { Snapshot } from './types/snapshots';
 import ComparePanel from './components/ComparePanel';
 import { SNAP_A_KEY, SNAP_B_KEY, loadSnapshot, saveSnapshot } from './utils/snapshots';
+import Board from './components/Board';
 
 const presets: Record<string, Scenario> = {
   "URL Shortener": {
@@ -80,6 +81,11 @@ function App() {
     setSnapshotB(loadSnapshot(SNAP_B_KEY));
   }, []);
 
+  const persistScenario = useCallback((json: string) => {
+    setScenarioJson(json);
+    localStorage.setItem("scenario", json);
+  }, []);
+
   const checkEngine = async () => {
     try {
       const text = await getHealth();
@@ -142,8 +148,7 @@ function App() {
       return;
     }
     const nextJson = JSON.stringify(snap.scenario, null, 2);
-    setScenarioJson(nextJson);
-    localStorage.setItem("scenario", nextJson);
+    persistScenario(nextJson);
     setSimulationResult(null);
     setError(null);
   };
@@ -158,17 +163,18 @@ function App() {
         style={{ width: "100%", height: "200px", marginTop: "20px" }}
         value={scenarioJson}
         onChange={(e) => {
-          setScenarioJson(e.target.value);
-          localStorage.setItem("scenario", e.target.value);
+          persistScenario(e.target.value);
         }}
+      />
+
+      <Board
+        scenarioJson={scenarioJson}
+        onScenarioChange={persistScenario}
       />
 
       <NodeParameters
         scenarioJson={scenarioJson}
-        onScenarioChange={(json) => {
-          setScenarioJson(json);
-          localStorage.setItem("scenario", json);
-        }}
+        onScenarioChange={persistScenario}
       />
 
 
@@ -181,9 +187,8 @@ function App() {
       <div style={{ marginTop: "10px" }}>
         <button
           onClick={() => {
-            const defaultScenario = presets["URL Shortener"]; // or choose another default
-            setScenarioJson(JSON.stringify(defaultScenario, null, 2));
-            localStorage.setItem("scenario", JSON.stringify(defaultScenario, null, 2));
+            const defaultScenario = presets["URL Shortener"];
+            persistScenario(JSON.stringify(defaultScenario, null, 2));
           }}
           style={{ marginRight: "10px" }}
         >
@@ -192,8 +197,7 @@ function App() {
 
         <button
           onClick={() => {
-            setScenarioJson("{\n  \"name\": \"new-scenario\",\n  \"nodes\": [],\n  \"edges\": []\n}");
-            localStorage.setItem("scenario", "{ \"name\": \"new-scenario\", \"nodes\": [], \"edges\": [] }");
+            persistScenario("{\n  \"name\": \"new-scenario\",\n  \"nodes\": [],\n  \"edges\": []\n}");
           }}
         >
           New Scenario
