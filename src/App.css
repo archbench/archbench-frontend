@@ -156,6 +156,118 @@
   cursor: pointer;
 }
 
+.scenario-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.scenario-selector__button,
+.scenario-selector__info {
+  border: 1px solid #cbd5f5;
+  background: #ffffff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.scenario-selector__info {
+  width: 36px;
+  text-align: center;
+}
+
+.scenario-selector__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  width: 280px;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+  z-index: 200;
+}
+
+.scenario-selector__menu input {
+  width: 100%;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border: 1px solid #cbd5f5;
+  padding: 6px 10px;
+}
+
+.scenario-selector__menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.scenario-selector__menu li {
+  margin-bottom: 6px;
+}
+
+.scenario-selector__menu li button {
+  width: 100%;
+  text-align: left;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.scenario-selector__menu li button:hover {
+  border-color: #cbd5f5;
+}
+
+.brief-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100vh;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -4px 0 12px rgba(15, 23, 42, 0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 300;
+}
+
+.brief-drawer__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brief-drawer__body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+}
+
+.brief-drawer__body th,
+.brief-drawer__body td {
+  border: 1px solid #e2e8f0;
+  padding: 6px;
+  text-align: left;
+}
+
+.brief-drawer__content {
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #334155;
+}
+
 .inspector-panel {
   display: flex;
   flex-direction: column;

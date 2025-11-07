@@ -18,66 +18,15 @@ import InspectorTabs from './components/Inspector/Tabs';
 import DbInspector from './components/Inspector/DbInspector';
 import WorkloadInspector from './components/Inspector/WorkloadInspector';
 import JsonEditor from './components/Editor/JsonEditor';
-
-const presets: Record<string, Scenario> = {
-  "URL Shortener": {
-    name: "url-shortener",
-    nodes: [
-      { id: "client", type: "client" },
-      { id: "api", type: "service" },
-      { id: "cache", type: "cache" },
-      { id: "db", type: "database" }
-    ],
-    edges: [
-      { from: "client", to: "api" },
-      { from: "api", to: "cache" },
-      { from: "api", to: "db" }
-    ]
-  },
-  "Chat DM": {
-    name: "chat-dm",
-    nodes: [
-      { id: "client", type: "client" },
-      { id: "gateway", type: "service" },
-      { id: "queue", type: "queue" },
-      { id: "worker", type: "service" },
-      { id: "store", type: "database" }
-    ],
-    edges: [
-      { from: "client", to: "gateway" },
-      { from: "gateway", to: "queue" },
-      { from: "queue", to: "worker" },
-      { from: "worker", to: "store" }
-    ]
-  },
-  "Checkout": {
-    name: "checkout",
-    nodes: [
-      { id: "client", type: "client" },
-      { id: "api", type: "service" },
-      { id: "payments", type: "service" },
-      { id: "orders-db", type: "database" },
-      { id: "cache", type: "cache" }
-    ],
-    edges: [
-      { from: "client", to: "api" },
-      { from: "api", to: "payments" },
-      { from: "api", to: "orders-db" },
-      { from: "api", to: "cache" }
-    ]
-  },
-  "Blank Scenario": {
-    name: "new-scenario",
-    nodes: [],
-    edges: []
-  }
-};
+import ScenarioSelector from './components/ScenarioSelector';
+import ScenarioBriefDrawer from './components/ScenarioBriefDrawer';
+import { SCENARIO_PRESETS, BLANK_SCENARIO } from './data/scenarios';
 
 function App() {
   const [engineStatus, setEngineStatus] = useState("Engine not checked");
   const [scenarioJson, setScenarioJson] = useState(() => {
     const saved = localStorage.getItem("scenario");
-    return saved ?? JSON.stringify(presets["Blank Scenario"], null, 2);
+    return saved ?? JSON.stringify(BLANK_SCENARIO, null, 2);
   });
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +35,11 @@ function App() {
   const [runStatus, setRunStatus] = useState<RunStatus>("idle");
   const [runMessage, setRunMessage] = useState("Idle");
   const compareRef = useRef<HTMLDivElement | null>(null);
+  const briefCache = useRef(new Map<string, string>());
+  const [briefState, setBriefState] = useState<{ preset: typeof SCENARIO_PRESETS[number]; content: string } | null>(null);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [briefError, setBriefError] = useState<string | null>(null);
 
   useEffect(() => {
     setSnapshotA(loadSnapshot(SNAP_A_KEY));
@@ -99,6 +53,13 @@ function App() {
 
   const scenario = useMemo(() => safeParse<Scenario>(scenarioJson), [scenarioJson]);
   const scenarioName = scenario?.name ?? "Unnamed scenario";
+  const activePreset = useMemo(() => {
+    if (!scenario?.name) {
+      return null;
+    }
+    return SCENARIO_PRESETS.find((preset) => preset.id === scenario.name) ?? null;
+  }, [scenario]);
+  const activePresetId = activePreset?.id ?? null;
 
   const checkEngine = async () => {
     try {
@@ -140,11 +101,54 @@ function App() {
   };
 
   const handleNewScenario = () => {
-    persistScenario(JSON.stringify(presets["Blank Scenario"], null, 2));
+    persistScenario(JSON.stringify(BLANK_SCENARIO, null, 2));
     setSimulationResult(null);
     setError(null);
     setRunStatus("idle");
     setRunMessage("Ready");
+  };
+
+  const handleSelectPreset = (presetId: string) => {
+    const preset = SCENARIO_PRESETS.find((item) => item.id === presetId);
+    if (!preset) {
+      return;
+    }
+    persistScenario(JSON.stringify(preset.scenario, null, 2));
+    setSimulationResult(null);
+    setError(null);
+    setRunStatus("idle");
+    setRunMessage("Ready");
+  };
+
+  const handleShowBrief = async (presetId: string) => {
+    const preset = SCENARIO_PRESETS.find((item) => item.id === presetId);
+    if (!preset) {
+      return;
+    }
+    setBriefOpen(true);
+    setBriefError(null);
+    const cached = briefCache.current.get(presetId);
+    if (cached) {
+      setBriefState({ preset, content: cached });
+      setBriefLoading(false);
+      return;
+    }
+    setBriefLoading(true);
+    try {
+      const response = await fetch(`/scenarios/${preset.id}/brief.md`);
+      if (!response.ok) {
+        throw new Error("Failed to load brief");
+      }
+      const text = await response.text();
+      briefCache.current.set(preset.id, text);
+      setBriefState({ preset, content: text });
+    } catch (err) {
+      console.error(err);
+      setBriefState({ preset, content: "" });
+      setBriefError("Unable to load brief");
+    } finally {
+      setBriefLoading(false);
+    }
   };
 
   const saveSnapshotForKey = (
@@ -203,6 +207,14 @@ function App() {
           onSaveSnapshotA={() => saveSnapshotForKey(SNAP_A_KEY, setSnapshotA)}
           onSaveSnapshotB={() => saveSnapshotForKey(SNAP_B_KEY, setSnapshotB)}
           onCompare={handleCompareClick}
+          centerSlot={
+            <ScenarioSelector
+              presets={SCENARIO_PRESETS}
+              activeId={activePresetId}
+              onSelect={handleSelectPreset}
+              onShowBrief={handleShowBrief}
+            />
+          }
         />
       }
       footer={
@@ -279,6 +291,13 @@ function App() {
       </div>
 
       <ErrorBanner message={error} />
+      <ScenarioBriefDrawer
+        open={briefOpen}
+        loading={briefLoading}
+        error={briefError}
+        brief={briefState}
+        onClose={() => setBriefOpen(false)}
+      />
     </AppShell>
   )
 }
