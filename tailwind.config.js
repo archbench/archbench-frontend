@@ -1,3 +1,5 @@
+const token = (name) => `var(${name})`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
@@ -5,13 +7,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#2D5BFF",
-        success: "#0FA958",
-        warning: "#E2B62B",
-        danger: "#D83A3A",
-        muted: "#6B7280",
-        bg: "#F9FAFB",
-        text: "#111827",
+        primary: token("--color-primary"),
+        success: token("--color-success"),
+        warning: token("--color-warning"),
+        danger: token("--color-danger"),
+        muted: token("--color-muted"),
+        bg: token("--color-bg"),
+        text: token("--color-text"),
       },
       spacing: {
         sm: "8px",

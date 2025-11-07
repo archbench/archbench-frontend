@@ -3,6 +3,7 @@
   --color-surface: #ffffff;
   --color-text: #111827;
   --color-primary: #2d5bff;
+  --color-warning: #e2b62b;
   --color-danger: #d83a3a;
   --color-success: #0fa958;
   --color-muted: #6b7280;
@@ -27,6 +28,7 @@
     --color-surface: #1f2430;
     --color-text: #f3f4f6;
     --color-border: #2f3848;
+    --color-warning: #f2cf63;
     --color-primary-soft-bg: rgba(45, 91, 255, 0.25);
     --color-primary-soft-border: rgba(45, 91, 255, 0.45);
     --color-muted-soft-bg: rgba(148, 163, 184, 0.25);
