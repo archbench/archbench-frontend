@@ -221,29 +221,31 @@ function App() {
       }
     >
       <div className="engine-status">{engineStatus}</div>
-      <div className="board-section">
-        <Board
-          scenarioJson={scenarioJson}
-          onScenarioChange={persistScenario}
-        />
-      </div>
-
-      <div className="inspector-section">
-        <NodeParameters
-          scenarioJson={scenarioJson}
-          onScenarioChange={persistScenario}
-        />
-
-        <div className="json-editor">
-          <label htmlFor="scenario-json">Scenario JSON</label>
-          <textarea
-            id="scenario-json"
-            value={scenarioJson}
-            onChange={(e) => {
-              persistScenario(e.target.value);
-            }}
+      <div className="app-main-grid">
+        <section className="board-column">
+          <Board
+            scenarioJson={scenarioJson}
+            onScenarioChange={persistScenario}
           />
-        </div>
+        </section>
+
+        <section className="inspector-column">
+          <NodeParameters
+            scenarioJson={scenarioJson}
+            onScenarioChange={persistScenario}
+          />
+
+          <div className="json-editor">
+            <label htmlFor="scenario-json">Scenario JSON</label>
+            <textarea
+              id="scenario-json"
+              value={scenarioJson}
+              onChange={(e) => {
+                persistScenario(e.target.value);
+              }}
+            />
+          </div>
+        </section>
       </div>
 
       <ErrorBanner message={error} />

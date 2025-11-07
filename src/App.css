@@ -103,12 +103,28 @@
   color: #475569;
 }
 
-.board-section,
-.inspector-section {
+.app-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.board-column,
+.inspector-column {
   background: #ffffff;
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.board-column {
+  min-height: 480px;
+}
+
+.inspector-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .json-editor {
@@ -138,4 +154,10 @@
   padding: 6px 10px;
   border-radius: 6px;
   cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .app-main-grid {
+    grid-template-columns: 1fr;
+  }
 }
