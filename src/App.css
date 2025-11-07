@@ -156,6 +156,137 @@
   cursor: pointer;
 }
 
+.inspector-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inspector-warning {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.inspector-empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.node-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.node-card__title {
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  color: #0f172a;
+}
+
+.node-card__title span {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-row label {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.text-input {
+  border: 1px solid #cbd5f5;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+}
+
+.inspector-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inspector-tabs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inspector-tabs__button {
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #475569;
+}
+
+.inspector-tabs__button.is-active {
+  background: #e2e8ff;
+  color: #1d4ed8;
+}
+
+.inspector-tabs__panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.db-table {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.db-table__header,
+.db-table__columns-header,
+.db-table-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.db-table__columns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.db-column {
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.db-table-actions button,
+.db-table__header button,
+.db-table__columns-header button {
+  border: 1px solid #cbd5f5;
+  background: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 @media (max-width: 900px) {
   .app-main-grid {
     grid-template-columns: 1fr;

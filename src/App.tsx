@@ -14,6 +14,10 @@ import AppShell from './components/layout/AppShell';
 import Header from './components/layout/Header';
 import type { RunStatus } from './components/common/StatusPill';
 import { safeParse } from './utils/json';
+import InspectorTabs from './components/Inspector/Tabs';
+import DbInspector from './components/Inspector/DbInspector';
+import WorkloadInspector from './components/Inspector/WorkloadInspector';
+import JsonEditor from './components/Editor/JsonEditor';
 
 const presets: Record<string, Scenario> = {
   "URL Shortener": {
@@ -230,21 +234,47 @@ function App() {
         </section>
 
         <section className="inspector-column">
-          <NodeParameters
-            scenarioJson={scenarioJson}
-            onScenarioChange={persistScenario}
+          <InspectorTabs
+            tabs={[
+              {
+                id: "node",
+                label: "Node",
+                content: (
+                  <NodeParameters
+                    scenarioJson={scenarioJson}
+                    onScenarioChange={persistScenario}
+                  />
+                ),
+              },
+              {
+                id: "db",
+                label: "Database",
+                content: (
+                  <DbInspector
+                    scenarioJson={scenarioJson}
+                    onScenarioChange={persistScenario}
+                  />
+                ),
+              },
+              {
+                id: "workload",
+                label: "Workload",
+                content: (
+                  <WorkloadInspector
+                    scenarioJson={scenarioJson}
+                    onScenarioChange={persistScenario}
+                  />
+                ),
+              },
+              {
+                id: "json",
+                label: "JSON",
+                content: (
+                  <JsonEditor value={scenarioJson} onChange={persistScenario} />
+                ),
+              },
+            ]}
           />
-
-          <div className="json-editor">
-            <label htmlFor="scenario-json">Scenario JSON</label>
-            <textarea
-              id="scenario-json"
-              value={scenarioJson}
-              onChange={(e) => {
-                persistScenario(e.target.value);
-              }}
-            />
-          </div>
         </section>
       </div>
 
