@@ -250,7 +250,7 @@ function App() {
           />
         </section>
 
-        <section className="inspector-column">
+        <section className="inspector-column flex w-full justify-end">
           <InspectorTabs
             tabs={[
               {

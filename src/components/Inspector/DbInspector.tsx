@@ -11,14 +11,22 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
   const scenario = useMemo<Scenario | null>(() => safeParse<Scenario>(scenarioJson), [scenarioJson]);
 
   if (!scenario) {
-    return <div className="inspector-warning">Invalid JSON — fix the editor to edit DB config.</div>;
+    return (
+      <div className="rounded-md border border-danger/40 bg-danger/5 px-4 py-3 text-sm text-danger">
+        Invalid JSON — fix the editor to edit DB config.
+      </div>
+    );
   }
 
   const databaseNodes =
     scenario.nodes?.map((node, index) => ({ node, index })).filter((entry) => entry.node.type === "database") ?? [];
 
   if (!databaseNodes.length) {
-    return <div className="inspector-empty">No database nodes available.</div>;
+    return (
+      <div className="rounded-md border border-dashed border-border/60 bg-surface px-4 py-6 text-center text-sm text-muted dark:border-borderDark/60 dark:bg-surfaceDark">
+        No database nodes available.
+      </div>
+    );
   }
 
   const updateDbConfig = (nodeIndex: number, mutate: (config: DbConfig) => void) => {
@@ -36,14 +44,17 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
   };
 
   return (
-    <div className="inspector-panel">
-      <h2>Database Inspector</h2>
+    <div className="flex flex-col gap-4">
+      <h2 className="text-lg font-semibold text-text">Database Inspector</h2>
       {databaseNodes.map(({ node, index }) => (
-        <div key={node.id ?? index} className="node-card">
-          <div className="node-card__title">{node.id || `db-${index}`}</div>
+        <div
+          key={node.id ?? index}
+          className="flex flex-col gap-4 rounded-md border border-border bg-surface p-4 shadow-subtle dark:border-borderDark dark:bg-surfaceDark"
+        >
+          <div className="text-sm font-semibold text-text">{node.id || `db-${index}`}</div>
 
-          <div className="field-row">
-            <label>Engine</label>
+          <div className="field-row flex flex-col gap-1">
+            <label className="text-sm font-medium text-muted">Engine</label>
             <select
               value={node.dbConfig?.engine ?? ""}
               onChange={(event) => {
@@ -66,10 +77,11 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
             </select>
           </div>
 
-          <div className="db-table-actions">
+          <div className="flex items-center justify-between gap-2 text-sm font-semibold text-text">
             <span>Tables</span>
             <button
               type="button"
+              className="rounded-md px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               onClick={() =>
                 updateDbConfig(index, (config) => {
                   const tables = [...(config.tables ?? [])];
@@ -83,14 +95,20 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
           </div>
 
           {(node.dbConfig?.tables ?? []).length === 0 ? (
-            <div className="inspector-empty">No tables defined.</div>
+            <div className="rounded-md border border-dashed border-border/60 bg-white/40 px-4 py-6 text-center text-sm text-muted dark:border-borderDark/60 dark:bg-transparent">
+              No tables defined.
+            </div>
           ) : (
             node.dbConfig?.tables?.map((table, tableIdx) => (
-              <div key={`${table.name}-${tableIdx}`} className="db-table">
-                <div className="db-table__header">
+              <div
+                key={`${table.name}-${tableIdx}`}
+                className="flex flex-col gap-3 rounded-md border border-border bg-white/70 p-4 dark:border-borderDark dark:bg-zinc-900/60"
+              >
+                <div className="flex items-center justify-between text-sm font-semibold text-text">
                   <span>Table {tableIdx + 1}</span>
                   <button
                     type="button"
+                    className="rounded-md px-2 py-1 text-xs font-semibold text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
                     onClick={() =>
                       updateDbConfig(index, (config) => {
                         const tables = [...(config.tables ?? [])];
@@ -156,11 +174,12 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
                   }
                 />
 
-                <div className="db-table__columns">
-                  <div className="db-table__columns-header">
+                <div className="flex flex-col gap-3 rounded-md border border-border/70 bg-white/80 p-3 dark:border-borderDark/60 dark:bg-zinc-900/70">
+                  <div className="flex items-center justify-between text-sm font-semibold text-text">
                     <span>Columns</span>
                     <button
                       type="button"
+                      className="rounded-md px-2 py-1 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       onClick={() =>
                         updateDbConfig(index, (config) => {
                           const tables = [...(config.tables ?? [])];
@@ -177,14 +196,17 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
                     </button>
                   </div>
                   {(table.columns ?? []).length === 0 ? (
-                    <div className="inspector-empty">No columns.</div>
+                    <div className="rounded-md border border-dashed border-border/60 px-3 py-4 text-center text-sm text-muted dark:border-borderDark/60">
+                      No columns.
+                    </div>
                   ) : (
                     table.columns?.map((column, columnIdx) => (
-                      <div key={`${column.name}-${columnIdx}`} className="db-column">
-                        <div className="db-table__columns-header">
+                      <div key={`${column.name}-${columnIdx}`} className="flex flex-col gap-3 rounded-md bg-white/60 p-3 dark:bg-zinc-950/40">
+                        <div className="flex items-center justify-between text-sm font-semibold text-text">
                           <span>Column {columnIdx + 1}</span>
                           <button
                             type="button"
+                            className="rounded-md px-2 py-1 text-xs font-semibold text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
                             onClick={() =>
                               updateDbConfig(index, (config) => {
                                 const tables = [...(config.tables ?? [])];

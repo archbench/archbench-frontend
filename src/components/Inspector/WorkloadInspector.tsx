@@ -11,7 +11,11 @@ export default function WorkloadInspector({ scenarioJson, onScenarioChange }: Pr
   const scenario = useMemo<Scenario | null>(() => safeParse<Scenario>(scenarioJson), [scenarioJson]);
 
   if (!scenario) {
-    return <div className="inspector-warning">Invalid JSON — fix the editor to edit workload.</div>;
+    return (
+      <div className="rounded-md border border-danger/40 bg-danger/5 px-4 py-3 text-sm text-danger">
+        Invalid JSON — fix the editor to edit workload.
+      </div>
+    );
   }
 
   const workload = scenario.workload ?? {};
@@ -43,27 +47,29 @@ export default function WorkloadInspector({ scenarioJson, onScenarioChange }: Pr
   };
 
   return (
-    <div className="inspector-panel">
-      <h2>Workload</h2>
-      <div className="field-row">
-        <label>Requests per second</label>
-        <input
-          type="number"
-          className="text-input"
-          placeholder="e.g. 2500 rps"
-          value={workload.rps ?? ""}
-          onChange={(event) => handleChange("rps", event.target.value)}
-        />
-      </div>
-      <div className="field-row">
-        <label>p95 target (ms)</label>
-        <input
-          type="number"
-          className="text-input"
-          placeholder="e.g. 150 ms"
-          value={workload.p95TargetMs ?? ""}
-          onChange={(event) => handleChange("p95TargetMs", event.target.value)}
-        />
+    <div className="flex flex-col gap-4">
+      <h2 className="text-lg font-semibold text-text">Workload</h2>
+      <div className="flex flex-col gap-4 rounded-md border border-border bg-surface p-4 shadow-subtle dark:border-borderDark dark:bg-surfaceDark">
+        <div className="field-row flex flex-col gap-1">
+          <label className="text-sm font-medium text-muted">Requests per second</label>
+          <input
+            type="number"
+            className="text-input"
+            placeholder="e.g. 2500 rps"
+            value={workload.rps ?? ""}
+            onChange={(event) => handleChange("rps", event.target.value)}
+          />
+        </div>
+        <div className="field-row flex flex-col gap-1">
+          <label className="text-sm font-medium text-muted">p95 target (ms)</label>
+          <input
+            type="number"
+            className="text-input"
+            placeholder="e.g. 150 ms"
+            value={workload.p95TargetMs ?? ""}
+            onChange={(event) => handleChange("p95TargetMs", event.target.value)}
+          />
+        </div>
       </div>
     </div>
   );
