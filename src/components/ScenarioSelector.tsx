@@ -13,6 +13,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -112,6 +114,8 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
     };
   }, [selectorOpen, isMobile]);
 
+  useBodyScrollLock(selectorOpen && !isMobile);
+
   return (
     <div className="flex items-center gap-2">
       {isMobile ? (
@@ -159,7 +163,7 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
           </PopoverTrigger>
           <PopoverPortal>
             <PopoverContent
-              className="fixed z-overlay w-[var(--ab-selector-width,16rem)] max-h-[60vh] overflow-auto rounded-md border border-border/60 bg-surface p-0 shadow-lg dark:border-borderDark/60 dark:bg-zinc-900"
+              className="fixed z-overlay w-[var(--ab-selector-width,16rem)] max-h-[60vh] overflow-hidden rounded-md border border-border/60 bg-surface p-0 shadow-lg dark:border-borderDark/60 dark:bg-zinc-900"
               align="start"
               side="bottom"
               sideOffset={8}
@@ -170,7 +174,8 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
                 activeSlug,
                 listboxId,
                 autoFocus: true,
-                listClassName: "max-h-[60vh] overflow-y-auto",
+                listClassName: "",
+                useScrollArea: true,
                 onSelect: handlePresetSelection,
               })}
             </PopoverContent>
@@ -225,6 +230,7 @@ function renderSelectorContent({
   listboxId,
   autoFocus,
   listClassName,
+  useScrollArea = false,
   onSelect,
 }: {
   groupedPresets: { label: string; items: Preset[] }[];
@@ -232,47 +238,65 @@ function renderSelectorContent({
   listboxId: string;
   autoFocus: boolean;
   listClassName: string;
+  useScrollArea?: boolean;
   onSelect: (slug: string) => void;
 }) {
+  const listContent = (
+    <CommandList id={listboxId}>
+      <CommandEmpty>No scenarios found.</CommandEmpty>
+      {groupedPresets.map((group) => (
+        <CommandGroup
+          key={group.label}
+          heading={group.label}
+          className="[&_[cmdk-group-heading]]:sticky [&_[cmdk-group-heading]]:top-0 [&_[cmdk-group-heading]]:z-[1] [&_[cmdk-group-heading]]:bg-surface/95 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted supports-[backdrop-filter]:[&_[cmdk-group-heading]]:bg-surface/75 dark:[&_[cmdk-group-heading]]:bg-surfaceDark/95"
+        >
+          {group.items.map((preset) => {
+            const isActive = preset.meta.slug === activeSlug;
+            return (
+              <CommandItem
+                key={preset.meta.slug}
+                value={`${preset.meta.slug} ${preset.meta.name}`}
+                onSelect={() => onSelect(preset.meta.slug)}
+                className={cn(
+                  "cursor-pointer px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10",
+                  isActive && "border border-primary/30 bg-primary/10",
+                )}
+              >
+                <Check
+                  className={cn("h-4 w-4", isActive ? "opacity-100" : "opacity-0")}
+                  aria-hidden="true"
+                />
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-medium text-text dark:text-white">
+                    {preset.meta.name}
+                  </span>
+                  <span className="text-xs text-muted">/{preset.meta.slug}</span>
+                </div>
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
+      ))}
+    </CommandList>
+  );
+
+  const scrollWrapper = useScrollArea ? (
+    <ScrollArea
+      className={cn("max-h-[60vh]", listClassName)}
+      onWheelCapture={(event) => event.stopPropagation()}
+    >
+      {listContent}
+    </ScrollArea>
+  ) : (
+    <div className={listClassName} onWheelCapture={(event) => event.stopPropagation()}>
+      {listContent}
+    </div>
+  );
+
   return (
     <Command className="w-full">
       <CommandInput placeholder="Search presets..." aria-label="Search presets" autoFocus={autoFocus} />
-      <CommandList id={listboxId} className={listClassName}>
-        <CommandEmpty>No scenarios found.</CommandEmpty>
-        {groupedPresets.map((group) => (
-          <CommandGroup
-            key={group.label}
-            heading={group.label}
-            className="[&_[cmdk-group-heading]]:sticky [&_[cmdk-group-heading]]:top-0 [&_[cmdk-group-heading]]:z-[1] [&_[cmdk-group-heading]]:bg-surface/95 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted supports-[backdrop-filter]:[&_[cmdk-group-heading]]:bg-surface/75 dark:[&_[cmdk-group-heading]]:bg-surfaceDark/95"
-          >
-            {group.items.map((preset) => {
-              const isActive = preset.meta.slug === activeSlug;
-              return (
-                <CommandItem
-                  key={preset.meta.slug}
-                  value={`${preset.meta.slug} ${preset.meta.name}`}
-                  onSelect={() => onSelect(preset.meta.slug)}
-                  className={cn(
-                    "cursor-pointer px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10",
-                    isActive && "border border-primary/30 bg-primary/10",
-                  )}
-                >
-                  <Check
-                    className={cn("h-4 w-4", isActive ? "opacity-100" : "opacity-0")}
-                    aria-hidden="true"
-                  />
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-medium text-text dark:text-white">
-                      {preset.meta.name}
-                    </span>
-                    <span className="text-xs text-muted">/{preset.meta.slug}</span>
-                  </div>
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        ))}
-      </CommandList>
+      {scrollWrapper}
       <CommandSeparator />
       <p className="border-t border-border/40 px-3 py-2 text-xs text-muted">
         Use ↑↓ to navigate, Enter to apply, Esc to close.
