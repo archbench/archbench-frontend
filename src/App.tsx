@@ -108,6 +108,9 @@ function App() {
   };
 
   const handleSelectPreset = (presetSlug: string) => {
+    if (scenario?.name === presetSlug) {
+      return;
+    }
     const preset = PRESETS.find((item) => item.meta.slug === presetSlug);
     if (!preset) {
       return;

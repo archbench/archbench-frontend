@@ -9,14 +9,22 @@ export default function HintsList({ hints }: Props) {
 
   if (!cleanedHints.length) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted shadow-subtle dark:border-borderDark dark:bg-surfaceDark">
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted shadow-subtle dark:border-borderDark dark:bg-surfaceDark"
+      >
         No hints for this run.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 shadow-subtle dark:border-borderDark dark:bg-surfaceDark">
+    <div
+      role="status"
+      aria-live="polite"
+      className="rounded-2xl border border-border bg-surface p-5 shadow-subtle dark:border-borderDark dark:bg-surfaceDark"
+    >
       <div className="flex flex-wrap gap-2">
         {cleanedHints.map((_, index) => (
           <Badge key={`hint-pill-${index}`} variant="secondary">
@@ -32,4 +40,3 @@ export default function HintsList({ hints }: Props) {
     </div>
   );
 }
-

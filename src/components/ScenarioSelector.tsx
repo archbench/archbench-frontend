@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useState } from "react";
 import { Check, ChevronsUpDown, Info } from "lucide-react";
 import type { Preset } from "../types/presets";
 import Button from "./common/Button";
@@ -38,6 +38,9 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
   const [open, setOpen] = useState(false);
   const [briefOpen, setBriefOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 640px)");
+  const componentId = useId();
+  const listboxId = `${componentId}-presets`;
+  const briefPanelId = `${componentId}-brief`;
 
   const groupedPresets = useMemo(() => {
     const groups = new Map<string, Preset[]>();
@@ -63,10 +66,20 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
     [presets, activeSlug],
   );
 
-  const briefContent = selectedPreset ? (
-    <BriefTabs preset={selectedPreset} />
-  ) : (
-    <p className="text-sm text-muted">Select a preset to view its brief.</p>
+  useEffect(() => {
+    if (!selectedPreset) {
+      setBriefOpen(false);
+    }
+  }, [selectedPreset]);
+
+  const briefContent = (
+    <div id={briefPanelId}>
+      {selectedPreset ? (
+        <BriefTabs preset={selectedPreset} />
+      ) : (
+        <p className="text-sm text-muted">Select a preset to view its brief.</p>
+      )}
+    </div>
   );
 
   const chooserButtonLabel = selectedPreset ? selectedPreset.meta.name : "Select scenario";
@@ -81,6 +94,7 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
             className="w-64 justify-between"
             aria-haspopup="listbox"
             aria-expanded={open}
+            aria-controls={listboxId}
           >
             <span className="truncate text-left">{chooserButtonLabel}</span>
             <ChevronsUpDown className="h-4 w-4 text-muted" aria-hidden="true" />
@@ -88,8 +102,8 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
         </PopoverTrigger>
         <PopoverContent className="w-72 p-0" align="start">
           <Command>
-            <CommandInput placeholder="Search scenarios..." />
-            <CommandList>
+            <CommandInput placeholder="Search scenarios..." aria-label="Search presets" />
+            <CommandList id={listboxId}>
               <CommandEmpty>No scenarios found.</CommandEmpty>
               {groupedPresets.map((group) => (
                 <CommandGroup key={group.label} heading={group.label}>
@@ -132,13 +146,14 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
         aria-label="Show preset brief"
         onClick={() => setBriefOpen(true)}
         disabled={!selectedPreset}
+        aria-controls={briefPanelId}
       >
         <Info className="h-4 w-4" aria-hidden="true" />
       </Button>
 
       {isMobile ? (
         <Drawer open={briefOpen} onOpenChange={setBriefOpen}>
-          <DrawerContent>
+          <DrawerContent aria-describedby={briefPanelId}>
             <DrawerHeader className="space-y-2">
               <DrawerTitle>{selectedPreset?.brief.title ?? "Preset brief"}</DrawerTitle>
               <DrawerDescription>
@@ -150,7 +165,7 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
         </Drawer>
       ) : (
         <Dialog open={briefOpen} onOpenChange={setBriefOpen}>
-          <DialogContent>
+          <DialogContent aria-describedby={briefPanelId}>
             <DialogHeader>
               <DialogTitle>{selectedPreset?.brief.title ?? "Preset brief"}</DialogTitle>
               <DialogDescription>
