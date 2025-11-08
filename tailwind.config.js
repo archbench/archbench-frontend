@@ -45,6 +45,12 @@ export default {
         subtle: "0 2px 4px rgba(0,0,0,0.08)",
         header: "0 2px 8px rgba(0,0,0,0.12)",
       },
+      zIndex: {
+        header: "40",
+        toolbar: "45",
+        overlay: "80",
+        modal: "90",
+      },
       fontFamily: {
         sans: [
           "ui-sans-serif",

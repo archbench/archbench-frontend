@@ -6,7 +6,7 @@ type Props = {
 
 export default function Header({ scenarioName, centerSlot }: Props) {
   return (
-    <div className="w-full bg-surface px-6 py-4 shadow-header dark:bg-surfaceDark">
+    <div className="z-header w-full bg-surface px-6 py-4 shadow-header dark:bg-surfaceDark">
       <div className="flex w-full flex-wrap items-start justify-between gap-4">
         <div className="min-w-[160px] flex-1 basis-full sm:basis-auto">
           <div className="flex flex-col gap-0.5">

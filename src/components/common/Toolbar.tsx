@@ -29,7 +29,7 @@ export default function Toolbar({
   onViewChange,
 }: Props) {
   return (
-    <div className="w-full border-b border-border bg-surface px-6 py-3 dark:border-borderDark dark:bg-surfaceDark">
+    <div className="z-toolbar w-full border-b border-border bg-surface px-6 py-3 dark:border-borderDark dark:bg-surfaceDark">
       <div className="flex w-full flex-wrap items-center gap-2">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <Button onClick={onCheckEngine} variant="secondary">
