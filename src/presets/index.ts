@@ -15,7 +15,13 @@ const buildScenario = (
 
 export const PRESETS: Preset[] = [
   {
-    meta: { slug: "url-shortener", name: "URL Shortener", category: "Edge" },
+    meta: {
+      slug: "url-shortener",
+      name: "URL Shortener",
+      category: "Core",
+      difficulty: "easy",
+      tags: ["cache", "db"],
+    },
     brief: {
       title: "URL Shortener",
       summary:
@@ -59,7 +65,13 @@ export const PRESETS: Preset[] = [
     ),
   },
   {
-    meta: { slug: "chat-dm", name: "Chat Direct Messages", category: "Messaging" },
+    meta: {
+      slug: "chat-dm",
+      name: "Chat Direct Messages",
+      category: "Messaging",
+      difficulty: "medium",
+      tags: ["queue", "db"],
+    },
     brief: {
       title: "Chat DM",
       summary:
@@ -104,7 +116,13 @@ export const PRESETS: Preset[] = [
     ),
   },
   {
-    meta: { slug: "news-feed", name: "News Feed", category: "Social" },
+    meta: {
+      slug: "news-feed",
+      name: "News Feed",
+      category: "Feeds",
+      difficulty: "medium",
+      tags: ["fanout", "cache"],
+    },
     brief: {
       title: "News Feed",
       summary:
@@ -147,7 +165,13 @@ export const PRESETS: Preset[] = [
     ),
   },
   {
-    meta: { slug: "checkout", name: "Checkout Flow", category: "Commerce" },
+    meta: {
+      slug: "checkout",
+      name: "Checkout Flow",
+      category: "E-commerce",
+      difficulty: "medium",
+      tags: ["payments", "db", "consistency"],
+    },
     brief: {
       title: "Checkout",
       summary:
@@ -190,7 +214,13 @@ export const PRESETS: Preset[] = [
     ),
   },
   {
-    meta: { slug: "notifications", name: "Notifications Fanout", category: "Comms" },
+    meta: {
+      slug: "notifications",
+      name: "Notifications Fanout",
+      category: "Infra",
+      difficulty: "easy",
+      tags: ["email", "sms", "queue"],
+    },
     brief: {
       title: "Notifications",
       summary:
@@ -216,7 +246,13 @@ export const PRESETS: Preset[] = [
     ),
   },
   {
-    meta: { slug: "rate-limiter", name: "Global Rate Limiter", category: "Reliability" },
+    meta: {
+      slug: "rate-limiter",
+      name: "Global Rate Limiter",
+      category: "Gateway",
+      difficulty: "easy",
+      tags: ["throttle", "api-gw"],
+    },
     brief: {
       title: "Rate Limiter",
       summary:
@@ -257,7 +293,13 @@ export const PRESETS: Preset[] = [
     ),
   },
   {
-    meta: { slug: "file-storage", name: "File Storage Pipeline", category: "Storage" },
+    meta: {
+      slug: "file-storage",
+      name: "File Storage Pipeline",
+      category: "Infra",
+      difficulty: "easy",
+      tags: ["blob", "cdn"],
+    },
     brief: {
       title: "File Storage",
       summary:
@@ -283,7 +325,13 @@ export const PRESETS: Preset[] = [
     ),
   },
   {
-    meta: { slug: "realtime-analytics", name: "Realtime Analytics", category: "Analytics" },
+    meta: {
+      slug: "realtime-analytics",
+      name: "Realtime Analytics",
+      category: "Analytics",
+      difficulty: "hard",
+      tags: ["stream", "ingest"],
+    },
     brief: {
       title: "Realtime Analytics",
       summary:
@@ -309,7 +357,13 @@ export const PRESETS: Preset[] = [
     ),
   },
   {
-    meta: { slug: "search-autocomplete", name: "Search Autocomplete", category: "Search" },
+    meta: {
+      slug: "search-autocomplete",
+      name: "Search Autocomplete",
+      category: "Search",
+      difficulty: "medium",
+      tags: ["index", "latency"],
+    },
     brief: {
       title: "Search Autocomplete",
       summary:
@@ -333,7 +387,13 @@ export const PRESETS: Preset[] = [
     ),
   },
   {
-    meta: { slug: "ride-hailing", name: "Ride Hailing", category: "Mobility" },
+    meta: {
+      slug: "ride-hailing",
+      name: "Ride Hailing",
+      category: "Marketplace",
+      difficulty: "hard",
+      tags: ["matching", "geo", "queue"],
+    },
     brief: {
       title: "Ride Hailing",
       summary:
@@ -379,4 +439,3 @@ export const PRESETS: Preset[] = [
     ),
   },
 ];
-
