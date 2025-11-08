@@ -1,5 +1,6 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Info } from "lucide-react";
+import { Portal as PopoverPortal } from "@radix-ui/react-popover";
 import type { Preset } from "@/types/presets";
 import Button from "./common/Button";
 import {
@@ -41,6 +42,7 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
   const componentId = useId();
   const listboxId = `${componentId}-presets`;
   const briefPanelId = `${componentId}-brief`;
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const groupedPresets = useMemo(() => {
     const groups = new Map<string, Preset[]>();
@@ -84,6 +86,21 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
 
   const chooserButtonLabel = selectedPreset ? selectedPreset.meta.name : "Select scenario";
 
+  useIsomorphicLayoutEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+    if (!open || !triggerRef.current || isMobile) {
+      document.body.style.removeProperty("--ab-selector-width");
+      return;
+    }
+    const width = triggerRef.current.getBoundingClientRect().width;
+    document.body.style.setProperty("--ab-selector-width", `${Math.ceil(width)}px`);
+    return () => {
+      document.body.style.removeProperty("--ab-selector-width");
+    };
+  }, [open, isMobile]);
+
   return (
     <div className="flex items-center gap-2">
       <Popover open={open} onOpenChange={setOpen}>
@@ -91,6 +108,7 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
           <Button
             type="button"
             variant="secondary"
+            ref={triggerRef}
             className="w-64 justify-between"
             aria-haspopup="listbox"
             aria-expanded={open}
@@ -100,43 +118,51 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
             <ChevronsUpDown className="h-4 w-4 text-muted" aria-hidden="true" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-72 p-0" align="start">
-          <Command>
-            <CommandInput placeholder="Search scenarios..." aria-label="Search presets" />
-            <CommandList id={listboxId}>
-              <CommandEmpty>No scenarios found.</CommandEmpty>
-              {groupedPresets.map((group) => (
-                <CommandGroup key={group.label} heading={group.label}>
-                  {group.items.map((preset) => (
-                    <CommandItem
-                      key={preset.meta.slug}
-                      value={`${preset.meta.slug} ${preset.meta.name}`}
-                      onSelect={() => {
-                        onSelect(preset.meta.slug);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={`h-4 w-4 ${preset.meta.slug === activeSlug ? "opacity-100" : "opacity-0"}`}
-                        aria-hidden="true"
-                      />
-                      <div className="flex flex-col text-left">
-                        <span className="text-sm font-medium text-text dark:text-white">
-                          {preset.meta.name}
-                        </span>
-                        <span className="text-xs text-muted">/{preset.meta.slug}</span>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              ))}
-            </CommandList>
-            <CommandSeparator />
-            <p className="px-3 pb-3 text-xs text-muted">
-              Use arrow keys ↑↓ to navigate. Press Enter to apply.
-            </p>
-          </Command>
-        </PopoverContent>
+        <PopoverPortal>
+          <PopoverContent
+            className="fixed z-overlay w-[var(--ab-selector-width,16rem)] max-h-[60vh] overflow-auto rounded-md border border-border/60 bg-surface p-0 shadow-lg dark:border-borderDark/60 dark:bg-zinc-900"
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            collisionPadding={16}
+          >
+            <Command>
+              <CommandInput placeholder="Search scenarios..." aria-label="Search presets" autoFocus />
+              <CommandList id={listboxId} className="max-h-[60vh] overflow-y-auto">
+                <CommandEmpty>No scenarios found.</CommandEmpty>
+                {groupedPresets.map((group) => (
+                  <CommandGroup key={group.label} heading={group.label}>
+                    {group.items.map((preset) => (
+                      <CommandItem
+                        key={preset.meta.slug}
+                        value={`${preset.meta.slug} ${preset.meta.name}`}
+                        onSelect={() => {
+                          onSelect(preset.meta.slug);
+                          setOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={`h-4 w-4 ${preset.meta.slug === activeSlug ? "opacity-100" : "opacity-0"}`}
+                          aria-hidden="true"
+                        />
+                        <div className="flex flex-col text-left">
+                          <span className="text-sm font-medium text-text dark:text-white">
+                            {preset.meta.name}
+                          </span>
+                          <span className="text-xs text-muted">/{preset.meta.slug}</span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                ))}
+              </CommandList>
+              <CommandSeparator />
+              <p className="border-t border-border/40 px-3 py-2 text-xs text-muted">
+                Use ↑↓ to navigate, Enter to apply, Esc to close.
+              </p>
+            </Command>
+          </PopoverContent>
+        </PopoverPortal>
       </Popover>
 
       <Button
