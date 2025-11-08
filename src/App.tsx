@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import NodeParameters from './components/NodeParameters';
 import MetricsCards from './components/MetricsCards';
+import ScoreCard from './components/Metrics/ScoreCard';
+import HintsList from './components/Metrics/HintsList';
 import ErrorBanner from './components/ErrorBanner';
 import './App.css'
 import { getHealth, simulate } from './api/client';
@@ -189,6 +191,12 @@ function App() {
       footer={
         <div>
           <MetricsCards result={simulationResult} />
+          {simulationResult ? (
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <ScoreCard score={simulationResult.score} />
+              <HintsList hints={simulationResult.hints} />
+            </div>
+          ) : null}
           <div className="snapshot-actions flex flex-wrap gap-2">
             <Button
               type="button"
