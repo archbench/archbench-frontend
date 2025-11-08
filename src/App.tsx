@@ -25,9 +25,22 @@ import JsonEditor from './components/Editor/JsonEditor';
 import ScenarioSelector from './components/ScenarioSelector';
 import { PRESETS } from './presets';
 import { BLANK_SCENARIO } from './presets/blank';
-import { bumpAttempt, setSolved } from './utils/storage';
+import { bumpAttempt, loadProgress, setSolved } from './utils/storage';
+import type { LibraryState } from './types/progress';
+import LibraryView from './views/Library';
 
 const SOLVED_SCORE_THRESHOLD = 80;
+const VIEW_STORAGE_KEY = "archbench:view:last";
+
+type AppView = "editor" | "library";
+
+const getInitialView = (): AppView => {
+  if (typeof window === "undefined") {
+    return "editor";
+  }
+  const stored = window.sessionStorage.getItem(VIEW_STORAGE_KEY);
+  return stored === "library" ? "library" : "editor";
+};
 
 function App() {
   const [engineStatus, setEngineStatus] = useState("Engine not checked");
@@ -42,6 +55,8 @@ function App() {
   const [runStatus, setRunStatus] = useState<RunStatus>("idle");
   const [runMessage, setRunMessage] = useState("Idle");
   const compareRef = useRef<HTMLDivElement | null>(null);
+  const [libraryState, setLibraryState] = useState<LibraryState>(() => loadProgress());
+  const [activeView, setActiveView] = useState<AppView>(() => getInitialView());
 
   useEffect(() => {
     setSnapshotA(loadSnapshot(SNAP_A_KEY));
@@ -62,6 +77,12 @@ function App() {
     return PRESETS.find((preset) => preset.meta.slug === scenario.name) ?? null;
   }, [scenario]);
   const activePresetSlug = activePreset?.meta.slug ?? null;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(VIEW_STORAGE_KEY, activeView);
+    }
+  }, [activeView]);
 
   const checkEngine = async () => {
     try {
@@ -87,10 +108,11 @@ function App() {
       setRunStatus("idle");
       setRunMessage("Simulation complete");
       if (activePresetSlug) {
-        bumpAttempt(activePresetSlug, result.score);
+        let updatedState = bumpAttempt(activePresetSlug, result.score);
         if (typeof result.score === "number" && result.score >= SOLVED_SCORE_THRESHOLD) {
-          setSolved(activePresetSlug, true);
+          updatedState = setSolved(activePresetSlug, true);
         }
+        setLibraryState(updatedState);
       }
     } catch (err) {
       setRunStatus("error");
@@ -173,70 +195,55 @@ function App() {
 
   const disableSave = !simulationResult;
 
-  return (
-    <AppShell
-      header={
-        <>
-          <Header
-            scenarioName={scenarioName}
-            centerSlot={
-              <ScenarioSelector
-                presets={PRESETS}
-                activeSlug={activePresetSlug}
-                onSelect={handleSelectPreset}
-              />
-            }
-          />
-          <Toolbar
-            disableSave={disableSave}
-            status={runStatus}
-            statusMessage={runMessage}
-            onCheckEngine={checkEngine}
-            onRun={runSimulation}
-            onNewScenario={handleNewScenario}
-            onSaveSnapshotA={() => saveSnapshotForKey(SNAP_A_KEY, setSnapshotA)}
-            onSaveSnapshotB={() => saveSnapshotForKey(SNAP_B_KEY, setSnapshotB)}
-            onCompare={handleCompareClick}
-          />
-        </>
-      }
-      footer={
-        <div>
-          <MetricsCards result={simulationResult} />
-          {simulationResult ? (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <ScoreCard score={simulationResult.score} />
-              <HintsList hints={simulationResult.hints} />
-            </div>
-          ) : null}
-          <div className="snapshot-actions flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => restoreSnapshot(snapshotA)}
-              disabled={!snapshotA}
-            >
-              Restore Snapshot A
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => restoreSnapshot(snapshotB)}
-              disabled={!snapshotB}
-            >
-              Restore Snapshot B
-            </Button>
-          </div>
-          {snapshotA && snapshotB ? (
-            <div ref={compareRef}>
-              <ComparePanel snapA={snapshotA} snapB={snapshotB} />
-            </div>
-          ) : null}
+  const handleLibraryLoad = (slug: string) => {
+    handleSelectPreset(slug);
+    setActiveView("editor");
+  };
+
+  const handleToggleSolved = (slug: string, solved: boolean) => {
+    const updated = setSolved(slug, solved);
+    setLibraryState(updated);
+  };
+
+  const editorFooter = (
+    <div>
+      <MetricsCards result={simulationResult} />
+      {simulationResult ? (
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <ScoreCard score={simulationResult.score} />
+          <HintsList hints={simulationResult.hints} />
         </div>
-      }
-    >
+      ) : null}
+      <div className="snapshot-actions flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => restoreSnapshot(snapshotA)}
+          disabled={!snapshotA}
+        >
+          Restore Snapshot A
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => restoreSnapshot(snapshotB)}
+          disabled={!snapshotB}
+        >
+          Restore Snapshot B
+        </Button>
+      </div>
+      {snapshotA && snapshotB ? (
+        <div ref={compareRef}>
+          <ComparePanel snapA={snapshotA} snapB={snapshotB} />
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const editorBody = (
+    <>
       <div className="engine-status">{engineStatus}</div>
       <div className="app-main-grid">
         <section className="board-column">
@@ -292,6 +299,50 @@ function App() {
       </div>
 
       <ErrorBanner message={error} />
+    </>
+  );
+
+  return (
+    <AppShell
+      header={
+        <>
+          <Header
+            scenarioName={scenarioName}
+            centerSlot={
+              <ScenarioSelector
+                presets={PRESETS}
+                activeSlug={activePresetSlug}
+                onSelect={handleSelectPreset}
+              />
+            }
+          />
+          <Toolbar
+            disableSave={disableSave}
+            status={runStatus}
+            statusMessage={runMessage}
+            activeView={activeView}
+            onCheckEngine={checkEngine}
+            onRun={runSimulation}
+            onNewScenario={handleNewScenario}
+            onSaveSnapshotA={() => saveSnapshotForKey(SNAP_A_KEY, setSnapshotA)}
+            onSaveSnapshotB={() => saveSnapshotForKey(SNAP_B_KEY, setSnapshotB)}
+            onCompare={handleCompareClick}
+            onViewChange={setActiveView}
+          />
+        </>
+      }
+      footer={activeView === "editor" ? editorFooter : null}
+    >
+      {activeView === "library" ? (
+        <LibraryView
+          presets={PRESETS}
+          progress={libraryState}
+          onLoadPreset={handleLibraryLoad}
+          onToggleSolved={handleToggleSolved}
+        />
+      ) : (
+        editorBody
+      )}
     </AppShell>
   )
 }

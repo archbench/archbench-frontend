@@ -75,7 +75,7 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
   const briefContent = (
     <div id={briefPanelId}>
       {selectedPreset ? (
-        <BriefTabs preset={selectedPreset} />
+        <PresetBriefTabs preset={selectedPreset} />
       ) : (
         <p className="text-sm text-muted">Select a preset to view its brief.</p>
       )}
@@ -180,7 +180,7 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
   );
 }
 
-function BriefTabs({ preset }: { preset: Preset }) {
+export function PresetBriefTabs({ preset }: { preset: Preset }) {
   const summaryParagraphs = preset.brief.summary
     .split("\n")
     .map((item) => item.trim())

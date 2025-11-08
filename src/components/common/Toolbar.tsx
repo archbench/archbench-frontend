@@ -5,24 +5,28 @@ type Props = {
   disableSave: boolean;
   status: RunStatus;
   statusMessage: string;
+  activeView: "editor" | "library";
   onCheckEngine: () => void;
   onRun: () => void;
   onNewScenario: () => void;
   onSaveSnapshotA: () => void;
   onSaveSnapshotB: () => void;
   onCompare: () => void;
+  onViewChange: (view: "editor" | "library") => void;
 };
 
 export default function Toolbar({
   disableSave,
   status,
   statusMessage,
+  activeView,
   onCheckEngine,
   onRun,
   onNewScenario,
   onSaveSnapshotA,
   onSaveSnapshotB,
   onCompare,
+  onViewChange,
 }: Props) {
   return (
     <div className="w-full border-b border-border bg-surface px-6 py-3 dark:border-borderDark dark:bg-surfaceDark">
@@ -47,7 +51,14 @@ export default function Toolbar({
             Compare
           </Button>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            type="button"
+            variant={activeView === "library" ? "primary" : "ghost"}
+            onClick={() => onViewChange(activeView === "library" ? "editor" : "library")}
+          >
+            {activeView === "library" ? "Back to Editor" : "Library"}
+          </Button>
           <StatusPill status={status} label={statusMessage} />
         </div>
       </div>
