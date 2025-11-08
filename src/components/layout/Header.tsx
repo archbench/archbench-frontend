@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Button from "../common/Button";
 import StatusPill, { type RunStatus } from "../common/StatusPill";
 
 type Props = {
@@ -28,11 +29,6 @@ export default function Header({
   onCompare,
   centerSlot,
 }: Props) {
-  const buttonBase =
-    "inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0";
-  const primaryButton = `${buttonBase} bg-primary text-white hover:opacity-90 focus-visible:ring-primary/50`;
-  const secondaryButton = `${buttonBase} border border-muted/40 text-text dark:text-white hover:bg-black/5 dark:hover:bg-white/10 focus-visible:ring-muted/40`;
-
   return (
     <div className="sticky top-0 z-50 -mx-6 -my-2 flex w-full flex-wrap items-center justify-between gap-4 bg-white px-6 py-3 shadow-header dark:bg-zinc-900">
       <div className="min-w-[160px] flex-1 basis-full sm:basis-auto">
@@ -47,34 +43,24 @@ export default function Header({
       </div>
 
       <div className="flex flex-1 basis-full flex-wrap items-center justify-end gap-2 sm:basis-auto">
-        <button type="button" className={secondaryButton} onClick={onCheckEngine}>
+        <Button onClick={onCheckEngine} variant="secondary">
           Check Engine
-        </button>
-        <button type="button" className={primaryButton} onClick={onRun}>
+        </Button>
+        <Button onClick={onRun} variant="primary">
           Run Simulation
-        </button>
-        <button type="button" className={secondaryButton} onClick={onNewScenario}>
+        </Button>
+        <Button onClick={onNewScenario} variant="secondary">
           New Scenario
-        </button>
-        <button
-          type="button"
-          className={secondaryButton}
-          onClick={onSaveSnapshotA}
-          disabled={disableSave}
-        >
+        </Button>
+        <Button onClick={onSaveSnapshotA} disabled={disableSave} variant="secondary">
           Save Snapshot A
-        </button>
-        <button
-          type="button"
-          className={secondaryButton}
-          onClick={onSaveSnapshotB}
-          disabled={disableSave}
-        >
+        </Button>
+        <Button onClick={onSaveSnapshotB} disabled={disableSave} variant="secondary">
           Save Snapshot B
-        </button>
-        <button type="button" className={primaryButton} onClick={onCompare}>
+        </Button>
+        <Button onClick={onCompare} variant="primary">
           Compare
-        </button>
+        </Button>
         <StatusPill status={status} label={statusMessage} />
       </div>
     </div>
