@@ -25,6 +25,9 @@ import JsonEditor from './components/Editor/JsonEditor';
 import ScenarioSelector from './components/ScenarioSelector';
 import { PRESETS } from './presets';
 import { BLANK_SCENARIO } from './presets/blank';
+import { bumpAttempt, setSolved } from './utils/storage';
+
+const SOLVED_SCORE_THRESHOLD = 80;
 
 function App() {
   const [engineStatus, setEngineStatus] = useState("Engine not checked");
@@ -83,6 +86,12 @@ function App() {
       setError(null);
       setRunStatus("idle");
       setRunMessage("Simulation complete");
+      if (activePresetSlug) {
+        bumpAttempt(activePresetSlug, result.score);
+        if (typeof result.score === "number" && result.score >= SOLVED_SCORE_THRESHOLD) {
+          setSolved(activePresetSlug, true);
+        }
+      }
     } catch (err) {
       setRunStatus("error");
       if (err instanceof SyntaxError) {
