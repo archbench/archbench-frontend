@@ -26,8 +26,10 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
+  DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 type Props = {
   presets: Preset[];
@@ -36,7 +38,7 @@ type Props = {
 };
 
 export default function ScenarioSelector({ presets, activeSlug, onSelect }: Props) {
-  const [open, setOpen] = useState(false);
+  const [selectorOpen, setSelectorOpen] = useState(false);
   const [briefOpen, setBriefOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 640px)");
   const componentId = useId();
@@ -86,11 +88,20 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
 
   const chooserButtonLabel = selectedPreset ? selectedPreset.meta.name : "Select scenario";
 
+  useEffect(() => {
+    setSelectorOpen(false);
+  }, [isMobile]);
+
+  const handlePresetSelection = (slug: string) => {
+    onSelect(slug);
+    setSelectorOpen(false);
+  };
+
   useIsomorphicLayoutEffect(() => {
     if (typeof document === "undefined") {
       return;
     }
-    if (!open || !triggerRef.current || isMobile) {
+    if (!selectorOpen || !triggerRef.current || isMobile) {
       document.body.style.removeProperty("--ab-selector-width");
       return;
     }
@@ -99,71 +110,73 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
     return () => {
       document.body.style.removeProperty("--ab-selector-width");
     };
-  }, [open, isMobile]);
+  }, [selectorOpen, isMobile]);
 
   return (
     <div className="flex items-center gap-2">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="secondary"
-            ref={triggerRef}
-            className="w-64 justify-between"
-            aria-haspopup="listbox"
-            aria-expanded={open}
-            aria-controls={listboxId}
-          >
-            <span className="truncate text-left">{chooserButtonLabel}</span>
-            <ChevronsUpDown className="h-4 w-4 text-muted" aria-hidden="true" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverPortal>
-          <PopoverContent
-            className="fixed z-overlay w-[var(--ab-selector-width,16rem)] max-h-[60vh] overflow-auto rounded-md border border-border/60 bg-surface p-0 shadow-lg dark:border-borderDark/60 dark:bg-zinc-900"
-            align="start"
-            side="bottom"
-            sideOffset={8}
-            collisionPadding={16}
-          >
-            <Command>
-              <CommandInput placeholder="Search scenarios..." aria-label="Search presets" autoFocus />
-              <CommandList id={listboxId} className="max-h-[60vh] overflow-y-auto">
-                <CommandEmpty>No scenarios found.</CommandEmpty>
-                {groupedPresets.map((group) => (
-                  <CommandGroup key={group.label} heading={group.label}>
-                    {group.items.map((preset) => (
-                      <CommandItem
-                        key={preset.meta.slug}
-                        value={`${preset.meta.slug} ${preset.meta.name}`}
-                        onSelect={() => {
-                          onSelect(preset.meta.slug);
-                          setOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={`h-4 w-4 ${preset.meta.slug === activeSlug ? "opacity-100" : "opacity-0"}`}
-                          aria-hidden="true"
-                        />
-                        <div className="flex flex-col text-left">
-                          <span className="text-sm font-medium text-text dark:text-white">
-                            {preset.meta.name}
-                          </span>
-                          <span className="text-xs text-muted">/{preset.meta.slug}</span>
-                        </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                ))}
-              </CommandList>
-              <CommandSeparator />
-              <p className="border-t border-border/40 px-3 py-2 text-xs text-muted">
-                Use ↑↓ to navigate, Enter to apply, Esc to close.
-              </p>
-            </Command>
-          </PopoverContent>
-        </PopoverPortal>
-      </Popover>
+      {isMobile ? (
+        <Drawer open={selectorOpen} onOpenChange={setSelectorOpen}>
+          <DrawerTrigger asChild>
+            <Button
+              type="button"
+              variant="secondary"
+              ref={triggerRef}
+              className="w-64 justify-between"
+              aria-haspopup="listbox"
+              aria-expanded={selectorOpen}
+              aria-controls={listboxId}
+            >
+              <span className="truncate text-left">{chooserButtonLabel}</span>
+              <ChevronsUpDown className="h-4 w-4 text-muted" aria-hidden="true" />
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent className="z-overlay h-[70vh] overflow-auto rounded-t-2xl border border-border bg-surface p-0 shadow-lg dark:border-borderDark dark:bg-surfaceDark">
+            {renderSelectorContent({
+              groupedPresets,
+              activeSlug,
+              listboxId,
+              autoFocus: false,
+              listClassName: "max-h-full overflow-y-auto",
+              onSelect: handlePresetSelection,
+            })}
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Popover open={selectorOpen} onOpenChange={setSelectorOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="secondary"
+              ref={triggerRef}
+              className="w-64 justify-between"
+              aria-haspopup="listbox"
+              aria-expanded={selectorOpen}
+              aria-controls={listboxId}
+            >
+              <span className="truncate text-left">{chooserButtonLabel}</span>
+              <ChevronsUpDown className="h-4 w-4 text-muted" aria-hidden="true" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverPortal>
+            <PopoverContent
+              className="fixed z-overlay w-[var(--ab-selector-width,16rem)] max-h-[60vh] overflow-auto rounded-md border border-border/60 bg-surface p-0 shadow-lg dark:border-borderDark/60 dark:bg-zinc-900"
+              align="start"
+              side="bottom"
+              sideOffset={8}
+              collisionPadding={16}
+            >
+              {renderSelectorContent({
+                groupedPresets,
+                activeSlug,
+                listboxId,
+                autoFocus: true,
+                listClassName: "max-h-[60vh] overflow-y-auto",
+                onSelect: handlePresetSelection,
+              })}
+            </PopoverContent>
+          </PopoverPortal>
+        </Popover>
+      )}
 
       <Button
         type="button"
@@ -203,6 +216,68 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
         </Dialog>
       )}
     </div>
+  );
+}
+
+function renderSelectorContent({
+  groupedPresets,
+  activeSlug,
+  listboxId,
+  autoFocus,
+  listClassName,
+  onSelect,
+}: {
+  groupedPresets: { label: string; items: Preset[] }[];
+  activeSlug: string | null;
+  listboxId: string;
+  autoFocus: boolean;
+  listClassName: string;
+  onSelect: (slug: string) => void;
+}) {
+  return (
+    <Command className="w-full">
+      <CommandInput placeholder="Search presets..." aria-label="Search presets" autoFocus={autoFocus} />
+      <CommandList id={listboxId} className={listClassName}>
+        <CommandEmpty>No scenarios found.</CommandEmpty>
+        {groupedPresets.map((group) => (
+          <CommandGroup
+            key={group.label}
+            heading={group.label}
+            className="[&_[cmdk-group-heading]]:sticky [&_[cmdk-group-heading]]:top-0 [&_[cmdk-group-heading]]:z-[1] [&_[cmdk-group-heading]]:bg-surface/95 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted supports-[backdrop-filter]:[&_[cmdk-group-heading]]:bg-surface/75 dark:[&_[cmdk-group-heading]]:bg-surfaceDark/95"
+          >
+            {group.items.map((preset) => {
+              const isActive = preset.meta.slug === activeSlug;
+              return (
+                <CommandItem
+                  key={preset.meta.slug}
+                  value={`${preset.meta.slug} ${preset.meta.name}`}
+                  onSelect={() => onSelect(preset.meta.slug)}
+                  className={cn(
+                    "cursor-pointer px-3 py-2 hover:bg-black/5 dark:hover:bg-white/10",
+                    isActive && "border border-primary/30 bg-primary/10",
+                  )}
+                >
+                  <Check
+                    className={cn("h-4 w-4", isActive ? "opacity-100" : "opacity-0")}
+                    aria-hidden="true"
+                  />
+                  <div className="flex flex-col text-left">
+                    <span className="text-sm font-medium text-text dark:text-white">
+                      {preset.meta.name}
+                    </span>
+                    <span className="text-xs text-muted">/{preset.meta.slug}</span>
+                  </div>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        ))}
+      </CommandList>
+      <CommandSeparator />
+      <p className="border-t border-border/40 px-3 py-2 text-xs text-muted">
+        Use ↑↓ to navigate, Enter to apply, Esc to close.
+      </p>
+    </Command>
   );
 }
 
