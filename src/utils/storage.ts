@@ -1,11 +1,37 @@
 import { safeParse } from "./json";
-import type { LibraryState } from "../types/progress";
+import type { LibraryState, PresetProgress } from "../types/progress";
 
 export const LIBRARY_KEY = "archbench:library:progress";
 
 const defaultState = (): LibraryState => ({ progress: {} });
 
 const hasWindow = () => typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
+const sanitizeEntry = (slug: string, payload: Partial<PresetProgress> | null | undefined): PresetProgress => ({
+  slug,
+  solved: Boolean(payload?.solved),
+  attempts: typeof payload?.attempts === "number" && payload.attempts > 0 ? Math.floor(payload.attempts) : 0,
+  lastScore: typeof payload?.lastScore === "number" ? payload.lastScore : undefined,
+  updatedAt: typeof payload?.updatedAt === "string" ? payload.updatedAt : undefined,
+});
+
+const normalizeState = (raw: unknown): LibraryState | null => {
+  if (!raw || typeof raw !== "object" || raw === null) {
+    return null;
+  }
+  const candidate = (raw as { progress?: unknown }).progress;
+  if (!candidate || typeof candidate !== "object") {
+    return null;
+  }
+  const entries: Record<string, PresetProgress> = {};
+  Object.entries(candidate as Record<string, unknown>).forEach(([slug, payload]) => {
+    if (!slug) {
+      return;
+    }
+    entries[slug] = sanitizeEntry(slug, (payload ?? null) as Partial<PresetProgress> | null);
+  });
+  return { progress: entries };
+};
 
 export function loadProgress(): LibraryState {
   if (!hasWindow()) {
@@ -15,24 +41,8 @@ export function loadProgress(): LibraryState {
   if (!raw) {
     return defaultState();
   }
-  const parsed = safeParse<LibraryState>(raw);
-  if (!parsed || typeof parsed !== "object" || typeof parsed.progress !== "object" || parsed.progress === null) {
-    return defaultState();
-  }
-  return {
-    progress: Object.fromEntries(
-      Object.entries(parsed.progress).map(([slug, payload]) => [
-        slug,
-        {
-          slug,
-          solved: Boolean(payload?.solved),
-          attempts: typeof payload?.attempts === "number" ? payload.attempts : 0,
-          lastScore: typeof payload?.lastScore === "number" ? payload.lastScore : undefined,
-          updatedAt: typeof payload?.updatedAt === "string" ? payload.updatedAt : undefined,
-        },
-      ]),
-    ),
-  };
+  const parsed = safeParse<unknown>(raw);
+  return normalizeState(parsed) ?? defaultState();
 }
 
 export function saveProgress(state: LibraryState): void {
@@ -44,6 +54,16 @@ export function saveProgress(state: LibraryState): void {
   } catch (error) {
     console.warn("Failed to persist library progress", error);
   }
+}
+
+export function normalizeProgressState(raw: unknown): LibraryState | null {
+  return normalizeState(raw);
+}
+
+export function replaceProgressState(next: LibraryState): LibraryState {
+  const normalized = normalizeState(next) ?? defaultState();
+  saveProgress(normalized);
+  return normalized;
 }
 
 export function bumpAttempt(slug: string, score?: number): LibraryState {
@@ -80,4 +100,3 @@ export function setSolved(slug: string, solved: boolean): LibraryState {
   saveProgress(state);
   return state;
 }
-

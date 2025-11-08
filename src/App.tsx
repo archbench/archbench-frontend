@@ -25,7 +25,7 @@ import JsonEditor from './components/Editor/JsonEditor';
 import ScenarioSelector from './components/ScenarioSelector';
 import { PRESETS } from './presets';
 import { BLANK_SCENARIO } from './presets/blank';
-import { bumpAttempt, loadProgress, setSolved } from './utils/storage';
+import { bumpAttempt, loadProgress, replaceProgressState, setSolved } from './utils/storage';
 import type { LibraryState } from './types/progress';
 import LibraryView from './views/Library';
 
@@ -205,6 +205,11 @@ function App() {
     setLibraryState(updated);
   };
 
+  const handleImportProgress = (state: LibraryState) => {
+    const updated = replaceProgressState(state);
+    setLibraryState(updated);
+  };
+
   const editorFooter = (
     <div>
       <MetricsCards result={simulationResult} />
@@ -339,6 +344,7 @@ function App() {
           progress={libraryState}
           onLoadPreset={handleLibraryLoad}
           onToggleSolved={handleToggleSolved}
+          onImportProgress={handleImportProgress}
         />
       ) : (
         editorBody

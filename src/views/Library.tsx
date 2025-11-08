@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Filter, Tag, Check } from "lucide-react";
+import { Search, Filter, Tag, Check, Upload, Download } from "lucide-react";
 import type { Preset } from "@/types/presets";
 import type { LibraryState } from "@/types/progress";
 import Button from "@/components/common/Button";
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/dialog";
 import { PresetBriefTabs } from "@/components/ScenarioSelector";
 import { cn } from "@/lib/utils";
+import { safeParse } from "@/utils/json";
+import { normalizeProgressState } from "@/utils/storage";
 
 type StatusFilter = "solved" | "attempted" | "unsolved";
 
@@ -33,15 +35,19 @@ type Props = {
   progress: LibraryState;
   onLoadPreset: (slug: string) => void;
   onToggleSolved: (slug: string, solved: boolean) => void;
+  onImportProgress: (state: LibraryState) => void;
 };
 
-export default function LibraryView({ presets, progress, onLoadPreset, onToggleSolved }: Props) {
+export default function LibraryView({ presets, progress, onLoadPreset, onToggleSolved, onImportProgress }: Props) {
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState<"all" | "easy" | "medium" | "hard">("all");
   const [statusFilters, setStatusFilters] = useState<StatusFilter[]>([]);
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [tagsPopoverOpen, setTagsPopoverOpen] = useState(false);
   const [briefPreset, setBriefPreset] = useState<Preset | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importValue, setImportValue] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
 
   const allTags = useMemo(() => {
     const bucket = new Set<string>();
@@ -108,6 +114,34 @@ export default function LibraryView({ presets, progress, onLoadPreset, onToggleS
     setTagFilters((prev) => (prev.includes(tag) ? prev.filter((value) => value !== tag) : [...prev, tag]));
   };
 
+  const handleExport = () => {
+    const data = JSON.stringify(progress, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `archbench-progress-${new Date().toISOString().split("T")[0]}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportConfirm = () => {
+    const parsed = safeParse<unknown>(importValue);
+    if (!parsed) {
+      setImportError("Invalid JSON payload.");
+      return;
+    }
+    const normalized = normalizeProgressState(parsed);
+    if (!normalized) {
+      setImportError("JSON must include a progress map.");
+      return;
+    }
+    onImportProgress(normalized);
+    setImportError(null);
+    setImportValue("");
+    setImportOpen(false);
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -116,6 +150,25 @@ export default function LibraryView({ presets, progress, onLoadPreset, onToggleS
         <p className="mt-1 text-sm text-muted">
           Triage scenarios like a LeetCode backlog. Filter by difficulty, review tags, and load presets directly into the editor.
         </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="secondary" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+            Export Progress
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setImportError(null);
+              setImportValue("");
+              setImportOpen(true);
+            }}
+          >
+            <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
+            Import Progress
+          </Button>
+        </div>
       </header>
 
       <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 shadow-subtle dark:border-borderDark dark:bg-surfaceDark">
@@ -299,6 +352,31 @@ export default function LibraryView({ presets, progress, onLoadPreset, onToggleS
               <PresetBriefTabs preset={briefPreset} />
             </>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Progress</DialogTitle>
+            <DialogDescription>Paste a JSON export from ArchBench to restore progress.</DialogDescription>
+          </DialogHeader>
+          <textarea
+            value={importValue}
+            onChange={(event) => setImportValue(event.target.value)}
+            placeholder='{"progress": {...}}'
+            className="min-h-[160px] w-full rounded-md border border-border bg-white p-3 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-borderDark dark:bg-zinc-900 dark:text-white"
+            aria-invalid={importError ? "true" : "false"}
+          />
+          {importError ? <p className="text-sm text-danger">{importError}</p> : null}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setImportOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleImportConfirm}>
+              Import
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

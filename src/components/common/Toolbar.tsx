@@ -56,6 +56,8 @@ export default function Toolbar({
             type="button"
             variant={activeView === "library" ? "primary" : "ghost"}
             onClick={() => onViewChange(activeView === "library" ? "editor" : "library")}
+            aria-pressed={activeView === "library"}
+            aria-label={activeView === "library" ? "Return to editor" : "Open preset library"}
           >
             {activeView === "library" ? "Back to Editor" : "Library"}
           </Button>
