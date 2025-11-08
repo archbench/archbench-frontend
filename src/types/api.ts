@@ -1,6 +1,7 @@
 export interface Workload {
   rps?: number;
   p95TargetMs?: number;
+  costTargetPerHour?: number;
 }
 
 export type NodeType =
@@ -46,6 +47,7 @@ export interface Node {
   capacityRps?: number;
   failureRate?: number;
   costPerHour?: number;
+  replicas?: number;
   dbConfig?: DbConfig;
 }
 
