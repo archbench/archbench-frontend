@@ -21,8 +21,8 @@ import DbInspector from './components/Inspector/DbInspector';
 import WorkloadInspector from './components/Inspector/WorkloadInspector';
 import JsonEditor from './components/Editor/JsonEditor';
 import ScenarioSelector from './components/ScenarioSelector';
-import ScenarioBriefDrawer from './components/ScenarioBriefDrawer';
-import { SCENARIO_PRESETS, BLANK_SCENARIO } from './data/scenarios';
+import { PRESETS } from './presets';
+import { BLANK_SCENARIO } from './presets/blank';
 
 function App() {
   const [engineStatus, setEngineStatus] = useState("Engine not checked");
@@ -37,11 +37,6 @@ function App() {
   const [runStatus, setRunStatus] = useState<RunStatus>("idle");
   const [runMessage, setRunMessage] = useState("Idle");
   const compareRef = useRef<HTMLDivElement | null>(null);
-  const briefCache = useRef(new Map<string, string>());
-  const [briefState, setBriefState] = useState<{ preset: typeof SCENARIO_PRESETS[number]; content: string } | null>(null);
-  const [briefOpen, setBriefOpen] = useState(false);
-  const [briefLoading, setBriefLoading] = useState(false);
-  const [briefError, setBriefError] = useState<string | null>(null);
 
   useEffect(() => {
     setSnapshotA(loadSnapshot(SNAP_A_KEY));
@@ -59,9 +54,9 @@ function App() {
     if (!scenario?.name) {
       return null;
     }
-    return SCENARIO_PRESETS.find((preset) => preset.id === scenario.name) ?? null;
+    return PRESETS.find((preset) => preset.meta.slug === scenario.name) ?? null;
   }, [scenario]);
-  const activePresetId = activePreset?.id ?? null;
+  const activePresetSlug = activePreset?.meta.slug ?? null;
 
   const checkEngine = async () => {
     try {
@@ -110,8 +105,8 @@ function App() {
     setRunMessage("Ready");
   };
 
-  const handleSelectPreset = (presetId: string) => {
-    const preset = SCENARIO_PRESETS.find((item) => item.id === presetId);
+  const handleSelectPreset = (presetSlug: string) => {
+    const preset = PRESETS.find((item) => item.meta.slug === presetSlug);
     if (!preset) {
       return;
     }
@@ -120,37 +115,6 @@ function App() {
     setError(null);
     setRunStatus("idle");
     setRunMessage("Ready");
-  };
-
-  const handleShowBrief = async (presetId: string) => {
-    const preset = SCENARIO_PRESETS.find((item) => item.id === presetId);
-    if (!preset) {
-      return;
-    }
-    setBriefOpen(true);
-    setBriefError(null);
-    const cached = briefCache.current.get(presetId);
-    if (cached) {
-      setBriefState({ preset, content: cached });
-      setBriefLoading(false);
-      return;
-    }
-    setBriefLoading(true);
-    try {
-      const response = await fetch(`/scenarios/${preset.id}/brief.md`);
-      if (!response.ok) {
-        throw new Error("Failed to load brief");
-      }
-      const text = await response.text();
-      briefCache.current.set(preset.id, text);
-      setBriefState({ preset, content: text });
-    } catch (err) {
-      console.error(err);
-      setBriefState({ preset, content: "" });
-      setBriefError("Unable to load brief");
-    } finally {
-      setBriefLoading(false);
-    }
   };
 
   const saveSnapshotForKey = (
@@ -203,10 +167,9 @@ function App() {
             scenarioName={scenarioName}
             centerSlot={
               <ScenarioSelector
-                presets={SCENARIO_PRESETS}
-                activeId={activePresetId}
+                presets={PRESETS}
+                activeSlug={activePresetSlug}
                 onSelect={handleSelectPreset}
-                onShowBrief={handleShowBrief}
               />
             }
           />
@@ -309,13 +272,6 @@ function App() {
       </div>
 
       <ErrorBanner message={error} />
-      <ScenarioBriefDrawer
-        open={briefOpen}
-        loading={briefLoading}
-        error={briefError}
-        brief={briefState}
-        onClose={() => setBriefOpen(false)}
-      />
     </AppShell>
   )
 }

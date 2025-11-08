@@ -1,81 +1,243 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ScenarioPreset } from "../data/scenarios";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { Check, ChevronsUpDown, Info } from "lucide-react";
+import type { Preset } from "../types/presets";
+import Button from "./common/Button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "./ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "./ui/drawer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 type Props = {
-  presets: ScenarioPreset[];
-  activeId: string | null;
-  onSelect: (presetId: string) => void;
-  onShowBrief: (presetId: string) => void;
+  presets: Preset[];
+  activeSlug: string | null;
+  onSelect: (presetSlug: string) => void;
 };
 
-export default function ScenarioSelector({ presets, activeId, onSelect, onShowBrief }: Props) {
+export default function ScenarioSelector({ presets, activeSlug, onSelect }: Props) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
-  const activePreset = useMemo(() => presets.find((preset) => preset.id === activeId) ?? null, [presets, activeId]);
-
-  useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      if (!containerRef.current) {
-        return;
+  const groupedPresets = useMemo(() => {
+    const groups = new Map<string, Preset[]>();
+    presets.forEach((preset) => {
+      const key = preset.meta.category ?? "General";
+      const bucket = groups.get(key);
+      if (bucket) {
+        bucket.push(preset);
+      } else {
+        groups.set(key, [preset]);
       }
-      if (!containerRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    if (open) {
-      document.addEventListener("mousedown", handleClick);
-    }
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
+    });
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, bucket]) => ({
+        label: key,
+        items: bucket.sort((a, b) => a.meta.name.localeCompare(b.meta.name)),
+      }));
+  }, [presets]);
 
-  const filtered = useMemo(() => {
-    const lower = query.toLowerCase();
-    return presets.filter((preset) => preset.label.toLowerCase().includes(lower));
-  }, [presets, query]);
+  const selectedPreset = useMemo(
+    () => presets.find((preset) => preset.meta.slug === activeSlug) ?? null,
+    [presets, activeSlug],
+  );
+
+  const briefContent = selectedPreset ? (
+    <BriefTabs preset={selectedPreset} />
+  ) : (
+    <p className="text-sm text-muted">Select a preset to view its brief.</p>
+  );
+
+  const chooserButtonLabel = selectedPreset ? selectedPreset.meta.name : "Select scenario";
 
   return (
-    <div className="scenario-selector" ref={containerRef}>
-      <button type="button" className="scenario-selector__button" onClick={() => setOpen((prev) => !prev)}>
-        {activePreset ? activePreset.label : "Select scenario"}
-      </button>
-      <button
+    <div className="flex items-center gap-2">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-64 justify-between"
+            aria-haspopup="listbox"
+            aria-expanded={open}
+          >
+            <span className="truncate text-left">{chooserButtonLabel}</span>
+            <ChevronsUpDown className="h-4 w-4 text-muted" aria-hidden="true" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Search scenarios..." />
+            <CommandList>
+              <CommandEmpty>No scenarios found.</CommandEmpty>
+              {groupedPresets.map((group) => (
+                <CommandGroup key={group.label} heading={group.label}>
+                  {group.items.map((preset) => (
+                    <CommandItem
+                      key={preset.meta.slug}
+                      value={`${preset.meta.slug} ${preset.meta.name}`}
+                      onSelect={() => {
+                        onSelect(preset.meta.slug);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={`h-4 w-4 ${preset.meta.slug === activeSlug ? "opacity-100" : "opacity-0"}`}
+                        aria-hidden="true"
+                      />
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm font-medium text-text dark:text-white">
+                          {preset.meta.name}
+                        </span>
+                        <span className="text-xs text-muted">/{preset.meta.slug}</span>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ))}
+            </CommandList>
+            <CommandSeparator />
+            <p className="px-3 pb-3 text-xs text-muted">
+              Use arrow keys ↑↓ to navigate. Press Enter to apply.
+            </p>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      <Button
         type="button"
-        className="scenario-selector__info"
-        onClick={() => activePreset && onShowBrief(activePreset.id)}
-        aria-label="Show scenario brief"
-        disabled={!activePreset}
+        variant="ghost"
+        size="sm"
+        aria-label="Show preset brief"
+        onClick={() => setBriefOpen(true)}
+        disabled={!selectedPreset}
       >
-        ℹ️
-      </button>
-      {open ? (
-        <div className="scenario-selector__menu">
-          <input
-            type="text"
-            placeholder="Search scenarios"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          <ul>
-            {filtered.map((preset) => (
-              <li key={preset.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelect(preset.id);
-                    setOpen(false);
-                    setQuery("");
-                  }}
-                >
-                  {preset.label}
-                </button>
-              </li>
-            ))}
-            {filtered.length === 0 ? <li className="inspector-empty">No scenarios</li> : null}
-          </ul>
-        </div>
-      ) : null}
+        <Info className="h-4 w-4" aria-hidden="true" />
+      </Button>
+
+      {isMobile ? (
+        <Drawer open={briefOpen} onOpenChange={setBriefOpen}>
+          <DrawerContent>
+            <DrawerHeader className="space-y-2">
+              <DrawerTitle>{selectedPreset?.brief.title ?? "Preset brief"}</DrawerTitle>
+              <DrawerDescription>
+                {selectedPreset ? `/${selectedPreset.meta.slug}` : "Pick a preset to view details."}
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-6">{briefContent}</div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={briefOpen} onOpenChange={setBriefOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{selectedPreset?.brief.title ?? "Preset brief"}</DialogTitle>
+              <DialogDescription>
+                {selectedPreset ? `/${selectedPreset.meta.slug}` : "Pick a preset to view details."}
+              </DialogDescription>
+            </DialogHeader>
+            {briefContent}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
+
+function BriefTabs({ preset }: { preset: Preset }) {
+  const summaryParagraphs = preset.brief.summary
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const workload = preset.brief.workload;
+
+  return (
+    <Tabs defaultValue="overview">
+      <TabsList className="w-full">
+        <TabsTrigger value="overview" className="flex-1">
+          Overview
+        </TabsTrigger>
+        <TabsTrigger value="workload" className="flex-1">
+          Workload
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="overview" className="rounded-md border border-border bg-surface p-4 text-sm leading-relaxed text-text dark:border-borderDark dark:bg-surfaceDark dark:text-white">
+        {summaryParagraphs.map((paragraph, index) => (
+          <p key={index} className={index ? "mt-3" : undefined}>
+            {paragraph}
+          </p>
+        ))}
+      </TabsContent>
+      <TabsContent value="workload">
+        <div className="rounded-md border border-border bg-surface p-4 text-sm dark:border-borderDark dark:bg-surfaceDark">
+          <dl className="grid grid-cols-2 gap-3">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted">Requests / sec</dt>
+              <dd className="text-base font-semibold text-text dark:text-white">
+                {workload?.rps?.toLocaleString() ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted">p95 target (ms)</dt>
+              <dd className="text-base font-semibold text-text dark:text-white">
+                {workload?.p95TargetMs ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-muted">Cost target ($/h)</dt>
+              <dd className="text-base font-semibold text-text dark:text-white">
+                {workload?.costTargetPerHour ? workload.costTargetPerHour.toFixed(2) : "—"}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia === "undefined") {
+      return false;
+    }
+    return window.matchMedia(query).matches;
+  });
+
+  useIsomorphicLayoutEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia === "undefined") {
+      return;
+    }
+    const mediaQuery = window.matchMedia(query);
+    const handler = () => setMatches(mediaQuery.matches);
+    handler();
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
+  }, [query]);
+
+  return matches;
+}
+
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
