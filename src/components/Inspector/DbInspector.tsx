@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { safeParse } from "../../utils/json";
 import type { Scenario, DbConfig, DbTable, DbColumn, DbColumnType, DbEngine } from "../../types/api";
+import { inputClass, labelClass } from "../common/formStyles";
 
 type Props = {
   scenarioJson: string;
@@ -54,7 +55,7 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
           <div className="text-sm font-semibold text-text">{node.id || `db-${index}`}</div>
 
           <div className="field-row flex flex-col gap-1">
-            <label className="text-sm font-medium text-muted">Engine</label>
+            <label className={labelClass}>Engine</label>
             <select
               value={node.dbConfig?.engine ?? ""}
               onChange={(event) => {
@@ -67,7 +68,7 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
                   }
                 });
               }}
-              className="text-input"
+              className={inputClass}
             >
               <option value="">Select engine</option>
               <option value="postgres">postgres</option>
@@ -81,7 +82,7 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
             <span>Tables</span>
             <button
               type="button"
-              className="rounded-md px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="rounded-md px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               onClick={() =>
                 updateDbConfig(index, (config) => {
                   const tables = [...(config.tables ?? [])];
@@ -108,7 +109,7 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
                   <span>Table {tableIdx + 1}</span>
                   <button
                     type="button"
-                    className="rounded-md px-2 py-1 text-xs font-semibold text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+                    className="rounded-md px-2 py-1 text-xs font-semibold text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 focus-visible:ring-offset-2"
                     onClick={() =>
                       updateDbConfig(index, (config) => {
                         const tables = [...(config.tables ?? [])];
@@ -179,7 +180,7 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
                     <span>Columns</span>
                     <button
                       type="button"
-                      className="rounded-md px-2 py-1 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      className="rounded-md px-2 py-1 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
                       onClick={() =>
                         updateDbConfig(index, (config) => {
                           const tables = [...(config.tables ?? [])];
@@ -206,7 +207,7 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
                           <span>Column {columnIdx + 1}</span>
                           <button
                             type="button"
-                            className="rounded-md px-2 py-1 text-xs font-semibold text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+                            className="rounded-md px-2 py-1 text-xs font-semibold text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 focus-visible:ring-offset-2"
                             onClick={() =>
                               updateDbConfig(index, (config) => {
                                 const tables = [...(config.tables ?? [])];
@@ -336,14 +337,14 @@ function LabeledInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="field-row">
-      <label>{label}</label>
+    <div className="field-row flex flex-col gap-1">
+      <label className={labelClass}>{label}</label>
       <input
         type="text"
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="text-input"
+        className={inputClass}
       />
     </div>
   );
@@ -363,9 +364,9 @@ function LabeledSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="field-row">
-      <label>{label}</label>
-      <select className="text-input" value={value} onChange={(event) => onChange(event.target.value)}>
+    <div className="field-row flex flex-col gap-1">
+      <label className={labelClass}>{label}</label>
+      <select className={inputClass} value={value} onChange={(event) => onChange(event.target.value)}>
         {placeholder ? <option value="">{placeholder}</option> : null}
         {options.map((option) => (
           <option key={option.value} value={option.value}>

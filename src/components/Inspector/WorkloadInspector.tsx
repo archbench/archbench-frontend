@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { safeParse } from "../../utils/json";
 import type { Scenario } from "../../types/api";
+import { inputClass, labelClass } from "../common/formStyles";
 
 type Props = {
   scenarioJson: string;
@@ -51,20 +52,20 @@ export default function WorkloadInspector({ scenarioJson, onScenarioChange }: Pr
       <h2 className="text-lg font-semibold text-text">Workload</h2>
       <div className="flex flex-col gap-4 rounded-md border border-border bg-surface p-4 shadow-subtle dark:border-borderDark dark:bg-surfaceDark">
         <div className="field-row flex flex-col gap-1">
-          <label className="text-sm font-medium text-muted">Requests per second</label>
+          <label className={labelClass}>Requests per second</label>
           <input
             type="number"
-            className="text-input"
+            className={inputClass}
             placeholder="e.g. 2500 rps"
             value={workload.rps ?? ""}
             onChange={(event) => handleChange("rps", event.target.value)}
           />
         </div>
         <div className="field-row flex flex-col gap-1">
-          <label className="text-sm font-medium text-muted">p95 target (ms)</label>
+          <label className={labelClass}>p95 target (ms)</label>
           <input
             type="number"
-            className="text-input"
+            className={inputClass}
             placeholder="e.g. 150 ms"
             value={workload.p95TargetMs ?? ""}
             onChange={(event) => handleChange("p95TargetMs", event.target.value)}

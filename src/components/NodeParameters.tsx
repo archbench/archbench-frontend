@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { safeParse } from "../utils/json";
 import type { Scenario, Node } from "../types/api";
+import { inputClass, labelClass } from "./common/formStyles";
 
 type NumericField = "latencyMs" | "varianceFactor" | "capacityRps" | "failureRate" | "costPerHour";
 
@@ -114,13 +115,13 @@ function Field({
 }) {
     return (
         <div className="field-row flex flex-col gap-1">
-            <label className="text-sm font-medium text-muted">{label}</label>
+            <label className={labelClass}>{label}</label>
             <input
                 type="text"
                 value={String(value)}
                 placeholder={placeholder}
                 onChange={(e) => onChange(e.target.value)}
-                className="text-input"
+                className={inputClass}
             />
         </div>
     );

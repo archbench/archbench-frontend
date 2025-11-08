@@ -13,7 +13,7 @@ export default function JsonEditor({ value, onChange }: Props) {
         id="scenario-json-editor"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-[220px] rounded-md border border-border bg-black/5 p-3 font-mono text-sm leading-[1.3] text-text outline-none transition focus-visible:ring-2 focus-visible:ring-primary/40 dark:border-borderDark dark:bg-white/5 dark:text-white"
+        className="min-h-[220px] rounded-md border border-border bg-black/5 p-3 font-mono text-sm leading-[1.3] text-text outline-none transition focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 dark:border-borderDark dark:bg-white/5 dark:text-white"
       />
     </div>
   );

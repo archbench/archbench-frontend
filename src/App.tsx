@@ -14,6 +14,7 @@ import AppShell from './components/layout/AppShell';
 import Header from './components/layout/Header';
 import type { RunStatus } from './components/common/StatusPill';
 import Toolbar from './components/common/Toolbar';
+import Button from './components/common/Button';
 import { safeParse } from './utils/json';
 import InspectorTabs from './components/Inspector/Tabs';
 import DbInspector from './components/Inspector/DbInspector';
@@ -225,13 +226,25 @@ function App() {
       footer={
         <div>
           <MetricsCards result={simulationResult} />
-          <div className="snapshot-actions">
-            <button type="button" onClick={() => restoreSnapshot(snapshotA)} disabled={!snapshotA}>
+          <div className="snapshot-actions flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => restoreSnapshot(snapshotA)}
+              disabled={!snapshotA}
+            >
               Restore Snapshot A
-            </button>
-            <button type="button" onClick={() => restoreSnapshot(snapshotB)} disabled={!snapshotB}>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => restoreSnapshot(snapshotB)}
+              disabled={!snapshotB}
+            >
               Restore Snapshot B
-            </button>
+            </Button>
           </div>
           {snapshotA && snapshotB ? (
             <div ref={compareRef}>

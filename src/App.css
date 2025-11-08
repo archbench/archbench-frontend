@@ -209,15 +209,6 @@
   color: var(--color-muted);
 }
 
-.text-input {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 0.95rem;
-  background: transparent;
-  color: var(--color-text);
-}
-
 .inspector-tabs {
   display: flex;
   flex-direction: column;
