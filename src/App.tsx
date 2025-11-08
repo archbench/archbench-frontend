@@ -4,6 +4,8 @@ import NodeParameters from './components/NodeParameters';
 import MetricsCards from './components/MetricsCards';
 import ScoreCard from './components/Metrics/ScoreCard';
 import HintsList from './components/Metrics/HintsList';
+import RubricPanel from './components/Grading/RubricPanel';
+import WhatIfList from './components/Grading/WhatIfList';
 import ErrorBanner from './components/ErrorBanner';
 import './App.css'
 import { getHealth, simulate } from './api/client';
@@ -67,6 +69,12 @@ function App() {
     setScenarioJson(json);
     localStorage.setItem("scenario", json);
   }, []);
+  const persistScenarioFromObject = useCallback(
+    (nextScenario: Scenario) => {
+      persistScenario(JSON.stringify(nextScenario, null, 2));
+    },
+    [persistScenario],
+  );
 
   const scenario = useMemo(() => safeParse<Scenario>(scenarioJson), [scenarioJson]);
   const scenarioName = scenario?.name ?? "Unnamed scenario";
@@ -217,6 +225,16 @@ function App() {
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <ScoreCard score={simulationResult.score} />
           <HintsList hints={simulationResult.hints} />
+        </div>
+      ) : null}
+      {simulationResult && scenario ? (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <RubricPanel scenario={scenario} result={simulationResult} />
+          <WhatIfList
+            scenario={scenario}
+            result={simulationResult}
+            onScenarioChange={persistScenarioFromObject}
+          />
         </div>
       ) : null}
       <div className="snapshot-actions flex flex-wrap gap-2">
