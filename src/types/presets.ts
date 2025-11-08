@@ -1,9 +1,13 @@
 import type { Scenario } from "./api";
 
+export type Difficulty = "easy" | "medium" | "hard";
+
 export interface PresetMeta {
   slug: string;
   name: string;
   category?: string;
+  difficulty?: Difficulty;
+  tags?: string[];
 }
 
 export interface PresetBrief {
@@ -21,4 +25,3 @@ export interface Preset {
   brief: PresetBrief;
   scenario: Scenario;
 }
-
