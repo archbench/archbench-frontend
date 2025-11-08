@@ -8,6 +8,8 @@
   --color-success: #0fa958;
   --color-muted: #6b7280;
   --color-border: #e2e8f0;
+  --color-surface-dark: #0f1116;
+  --color-border-dark: rgba(255, 255, 255, 0.12);
   --color-primary-soft-bg: rgba(45, 91, 255, 0.12);
   --color-primary-soft-border: rgba(45, 91, 255, 0.3);
   --color-muted-soft-bg: rgba(107, 114, 128, 0.15);
@@ -29,6 +31,8 @@
     --color-text: #f3f4f6;
     --color-border: #2f3848;
     --color-warning: #f2cf63;
+    --color-surface-dark: #0f1116;
+    --color-border-dark: rgba(255, 255, 255, 0.12);
     --color-primary-soft-bg: rgba(45, 91, 255, 0.25);
     --color-primary-soft-border: rgba(45, 91, 255, 0.45);
     --color-muted-soft-bg: rgba(148, 163, 184, 0.25);
