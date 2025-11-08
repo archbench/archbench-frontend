@@ -13,6 +13,7 @@ import Board from './components/Board';
 import AppShell from './components/layout/AppShell';
 import Header from './components/layout/Header';
 import type { RunStatus } from './components/common/StatusPill';
+import Toolbar from './components/common/Toolbar';
 import { safeParse } from './utils/json';
 import InspectorTabs from './components/Inspector/Tabs';
 import DbInspector from './components/Inspector/DbInspector';
@@ -196,26 +197,30 @@ function App() {
   return (
     <AppShell
       header={
-        <Header
-          scenarioName={scenarioName}
-          status={runStatus}
-          statusMessage={runMessage}
-          disableSave={disableSave}
-          onCheckEngine={checkEngine}
-          onRun={runSimulation}
-          onNewScenario={handleNewScenario}
-          onSaveSnapshotA={() => saveSnapshotForKey(SNAP_A_KEY, setSnapshotA)}
-          onSaveSnapshotB={() => saveSnapshotForKey(SNAP_B_KEY, setSnapshotB)}
-          onCompare={handleCompareClick}
-          centerSlot={
-            <ScenarioSelector
-              presets={SCENARIO_PRESETS}
-              activeId={activePresetId}
-              onSelect={handleSelectPreset}
-              onShowBrief={handleShowBrief}
-            />
-          }
-        />
+        <>
+          <Header
+            scenarioName={scenarioName}
+            centerSlot={
+              <ScenarioSelector
+                presets={SCENARIO_PRESETS}
+                activeId={activePresetId}
+                onSelect={handleSelectPreset}
+                onShowBrief={handleShowBrief}
+              />
+            }
+          />
+          <Toolbar
+            disableSave={disableSave}
+            status={runStatus}
+            statusMessage={runMessage}
+            onCheckEngine={checkEngine}
+            onRun={runSimulation}
+            onNewScenario={handleNewScenario}
+            onSaveSnapshotA={() => saveSnapshotForKey(SNAP_A_KEY, setSnapshotA)}
+            onSaveSnapshotB={() => saveSnapshotForKey(SNAP_B_KEY, setSnapshotB)}
+            onCompare={handleCompareClick}
+          />
+        </>
       }
       footer={
         <div>

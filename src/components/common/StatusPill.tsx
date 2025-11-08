@@ -15,8 +15,11 @@ const statusClasses: Record<RunStatus, string> = {
 export default function StatusPill({ status, label }: Props) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border border-muted/40 bg-white/80 px-3 py-1 text-sm font-semibold leading-none dark:border-white/20 dark:bg-white/10 ${statusClasses[status]}`}
+      role="status"
       aria-live="polite"
+      aria-atomic="true"
+      title={label}
+      className={`inline-flex items-center gap-1 rounded-md px-3 py-1 text-sm font-semibold ${statusClasses[status]}`}
     >
       {label}
     </span>
