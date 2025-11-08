@@ -12,13 +12,55 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    --background: 249 250 251;
+    --foreground: 17 24 39;
+    --card: 255 255 255;
+    --card-foreground: 17 24 39;
+    --popover: 255 255 255;
+    --popover-foreground: 17 24 39;
+    --primary: 45 91 255;
+    --primary-foreground: 255 255 255;
+    --secondary: 235 236 240;
+    --secondary-foreground: 17 24 39;
+    --muted: 107 114 128;
+    --muted-foreground: 107 114 128;
+    --accent: 229 231 235;
+    --accent-foreground: 17 24 39;
+    --destructive: 216 58 58;
+    --destructive-foreground: 255 255 255;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 45 91 255;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 15 17 22;
+    --foreground: 243 244 246;
+    --card: 31 36 48;
+    --card-foreground: 243 244 246;
+    --popover: 31 36 48;
+    --popover-foreground: 243 244 246;
+    --primary: 45 91 255;
+    --primary-foreground: 255 255 255;
+    --secondary: 39 43 55;
+    --secondary-foreground: 243 244 246;
+    --muted: 148 163 184;
+    --muted-foreground: 148 163 184;
+    --accent: 39 43 55;
+    --accent-foreground: 243 244 246;
+    --destructive: 248 113 113;
+    --destructive-foreground: 15 17 22;
+    --border: 47 56 72;
+    --input: 47 56 72;
+    --ring: 129 140 248;
   }
 
   body {
     margin: 0;
     min-height: 100vh;
-    background: theme(colors.bg);
-    color: theme(colors.text);
+    background: rgb(var(--background));
+    color: rgb(var(--foreground));
   }
 }
 
