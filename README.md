@@ -3,6 +3,16 @@
 
 > Tailwind installed; gradual migration underway. Tokens now live in `tailwind.config.js` and the Header is the first component migrated.
 
+## Testing & CI
+
+- Unit / integration: `npm run test` (headless) or `npm run test:ui` (Vitest UI).
+- End-to-end: `npm run e2e` (Chromium) or `npm run e2e:ui` (Playwright UI). Visual snapshot baselines live under `tests/e2e/__screenshots__`.
+- Refresh visual baselines: `npx playwright test --update-snapshots`.
+- Inspect Playwright HTML report: `npm run e2e:report`.
+- Inspect individual traces: `npx playwright show-trace trace.zip` (trace files are stored inside `test-results/`).
+
+GitHub Actions workflow `.github/workflows/fe-ci.yml` runs Vitest + Playwright on every push / PR, installs browser dependencies, and uploads HTML reports plus raw test artifacts.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
