@@ -31,6 +31,7 @@ import { BLANK_SCENARIO } from './presets/blank';
 import { bumpAttempt, loadProgress, replaceProgressState, setSolved } from './utils/storage';
 import type { LibraryState } from './types/progress';
 import LibraryView from './views/Library';
+import { useHotkeys } from './hooks/useHotkeys';
 
 const SOLVED_SCORE_THRESHOLD = 80;
 const VIEW_STORAGE_KEY = "archbench:view:last";
@@ -230,6 +231,57 @@ function App() {
     const updated = replaceProgressState(state);
     setLibraryState(updated);
   };
+
+  const hotkeyBindings = useMemo(
+    () => [
+      {
+        key: "r",
+        handler: () => {
+          void runSimulation();
+        },
+        enabled: activeView === "editor",
+      },
+      {
+        key: "n",
+        handler: () => {
+          handleNewScenario();
+        },
+        enabled: activeView === "editor",
+      },
+      {
+        key: "1",
+        handler: () => {
+          handleSaveSnapshotA();
+        },
+        enabled: activeView === "editor" && Boolean(simulationResult),
+      },
+      {
+        key: "2",
+        handler: () => {
+          handleSaveSnapshotB();
+        },
+        enabled: activeView === "editor" && Boolean(simulationResult),
+      },
+      {
+        key: "c",
+        handler: () => {
+          handleCompareClick();
+        },
+        enabled: activeView === "editor",
+      },
+    ],
+    [
+      runSimulation,
+      handleNewScenario,
+      handleSaveSnapshotA,
+      handleSaveSnapshotB,
+      handleCompareClick,
+      activeView,
+      simulationResult,
+    ],
+  );
+
+  useHotkeys(hotkeyBindings);
 
   const editorFooter = (
     <div>
