@@ -24,8 +24,20 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "URL Shortener",
-      summary:
-        "Core redirector for marketing campaigns.\nCache hits must stay over 90% to avoid hammering the primary database.\nTraffic spikes come in hourly bursts from newsletter links.",
+      summary: `## Problem
+- Core redirector for marketing campaigns.
+- Cache hits must stay over 90% or the primary database melts.
+- Traffic spikes arrive hourly after newsletter drops.
+
+## Notes
+- Treat cache misses as a SEV alert after 3 minutes.
+- Monitor redirect latency and DB CPU saturation together.
+
+\`\`\`
+GET /{slug}
+302 Location: target
+\`\`\`
+`,
       workload: { rps: 1800, p95TargetMs: 150, costTargetPerHour: 0.45 },
     },
     scenario: buildScenario(
@@ -74,8 +86,22 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "Chat DM",
-      summary:
-        "Inbox-style DM service with ordered delivery and read receipts.\nQueue load follows diurnal patterns and needs worker autoscaling.\nLow-latency multi-region delivery is more important than raw throughput.",
+      summary: `## Problem
+- Inbox-style DM service with ordered delivery and read receipts.
+- Queue load follows diurnal patterns and needs worker autoscaling.
+- Low-latency multi-region delivery beats raw throughput.
+
+## Requirements
+- Preserve ordering per conversation.
+- Surface queue depth and worker backlog SLOs.
+
+\`\`\`
+event sendDM {
+  conversationId
+  payload
+}
+\`\`\`
+`,
       workload: { rps: 2500, p95TargetMs: 120, costTargetPerHour: 0.8 },
     },
     scenario: buildScenario(
@@ -125,8 +151,20 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "News Feed",
-      summary:
-        "Personalized feed with freshness guarantees.\nAPI fans out to cache + DB + recommendation service per request.\nWorkload is bursty around product announcements and events.",
+      summary: `## Problem
+- Personalized feed with freshness guarantees.
+- Each request fans out to cache, DB, and recommendations.
+- Workload is bursty around launches and live events.
+
+## Requirements
+- Keep cache hot for top 5% creators.
+- Budget p95 under 180ms even during fan-out spikes.
+
+\`\`\`
+POST /feed
+body: { userId }
+\`\`\`
+`,
       workload: { rps: 3200, p95TargetMs: 180, costTargetPerHour: 1.3 },
     },
     scenario: buildScenario(
@@ -174,8 +212,20 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "Checkout",
-      summary:
-        "Secure checkout with payment orchestration and inventory writes.\nFraud screening runs inline and adds latency budget pressure.\nOptimizing DB writes and idempotency reduces support load.",
+      summary: `## Problem
+- Secure checkout with payment orchestration and inventory writes.
+- Fraud screening runs inline and eats into latency budget.
+- Idempotent DB writes reduce support load after retries.
+
+## Requirements
+- Keep payment provider timeouts under 3 seconds.
+- Emit audit logs for every state transition.
+
+\`\`\`
+POST /checkout
+payload: orderDraft
+\`\`\`
+`,
       workload: { rps: 900, p95TargetMs: 200, costTargetPerHour: 1.1 },
     },
     scenario: buildScenario(
@@ -223,8 +273,19 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "Notifications",
-      summary:
-        "Transactional notifications with email + SMS workers.\nQueue depth is the key alerting signal during incidents.\nCost target assumes SMS offload to third-party provider.",
+      summary: `## Problem
+- Transactional notifications through email + SMS workers.
+- Queue depth is the primary alert during incidents.
+- Cost target assumes SMS offload to a third-party vendor.
+
+## Notes
+- Back off SMS sends when provider SLAs degrade.
+- Auto-drain failed jobs into a DLQ for later replay.
+
+\`\`\`
+notify(userId, template, channel[])
+\`\`\`
+`,
       workload: { rps: 1500, p95TargetMs: 220, costTargetPerHour: 0.7 },
     },
     scenario: buildScenario(
@@ -255,8 +316,19 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "Rate Limiter",
-      summary:
-        "Edge service enforcing tenant quotas.\nHot tenants should be absorbed by the edge cache before hitting storage.\nLatency budget is tiny; cross-region replication is async.",
+      summary: `## Problem
+- Edge service enforcing tenant quotas.
+- Hot tenants must be absorbed at the edge cache before storage.
+- Latency budget is tiny; cross-region replication is async.
+
+## Requirements
+- Record per-tenant quota updates within 50ms.
+- Publish usage metrics to control plane every second.
+
+\`\`\`
+limit(tenantId, token)
+\`\`\`
+`,
       workload: { rps: 4200, p95TargetMs: 80, costTargetPerHour: 0.6 },
     },
     scenario: buildScenario(
@@ -302,8 +374,19 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "File Storage",
-      summary:
-        "Multipart uploads with asynchronous processing.\nWorkers add virus scanning, thumbnails, and metadata writes.\nObject-store egress is the primary cost lever for this workload.",
+      summary: `## Problem
+- Multipart uploads with asynchronous processing.
+- Workers handle virus scanning, thumbnails, and metadata writes.
+- Object-store egress dominates cost for this workload.
+
+## Requirements
+- Push upload status events for UI progress bars.
+- Auto-expire unfinished uploads after 15 minutes.
+
+\`\`\`
+PUT /uploads/{id}/chunk
+\`\`\`
+`,
       workload: { rps: 650, p95TargetMs: 250, costTargetPerHour: 1.4 },
     },
     scenario: buildScenario(
@@ -334,8 +417,19 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "Realtime Analytics",
-      summary:
-        "Stream ingestion > processing > dashboard updates.\nBatch window is sub-second, so backpressure must be visible quickly.\nCPU-heavy processors need close monitoring for noisy neighbors.",
+      summary: `## Problem
+- Stream ingestion → processing → dashboard updates.
+- Batch window is sub-second; backpressure must surface immediately.
+- CPU-heavy processors get noisy-neighbor issues.
+
+## Requirements
+- Emit lag metrics for every stage.
+- Keep dashboard refresh under 1.5s after ingest.
+
+\`\`\`
+stream event { tenantId, metric, value }
+\`\`\`
+`,
       workload: { rps: 3000, p95TargetMs: 140, costTargetPerHour: 1.8 },
     },
     scenario: buildScenario(
@@ -366,8 +460,19 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "Search Autocomplete",
-      summary:
-        "Edge-accelerated search suggestions with aggressive caching.\nMisses fall back to a search tier that reads from a pre-warmed index.\nLatency sensitivity is extreme; aim for sub-70ms end-to-end.",
+      summary: `## Problem
+- Edge-accelerated search suggestions with aggressive caching.
+- Misses fall back to a search tier backed by a pre-warmed index.
+- Latency sensitivity is extreme; sub-70ms end-to-end target.
+
+## Notes
+- Evict cache entries with LFU to protect hot prefixes.
+- Mirror index metadata to avoid cold start penalties.
+
+\`\`\`
+GET /search?s=query
+\`\`\`
+`,
       workload: { rps: 4800, p95TargetMs: 70, costTargetPerHour: 1.0 },
     },
     scenario: buildScenario(
@@ -396,8 +501,19 @@ export const PRESETS: Preset[] = [
     },
     brief: {
       title: "Ride Hailing",
-      summary:
-        "Match riders to drivers with live ETA updates.\nQueue plus worker tier coordinates driver state and pricing events.\nDB writes are append-only but high volume during commute surges.",
+      summary: `## Problem
+- Match riders to drivers with live ETA updates.
+- Queue + worker tier coordinates driver state and pricing events.
+- DB writes are append-only but surge during commute windows.
+
+## Requirements
+- Ensure driver heartbeats <30s or drop them from supply.
+- Broadcast fare changes to riders within 5s.
+
+\`\`\`
+match(rider, pickup, dropoff)
+\`\`\`
+`,
       workload: { rps: 2100, p95TargetMs: 190, costTargetPerHour: 1.6 },
     },
     scenario: buildScenario(
