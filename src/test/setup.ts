@@ -12,7 +12,8 @@ if (!("ResizeObserver" in globalThis)) {
 }
 
 if (!HTMLElement.prototype.scrollIntoView) {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  HTMLElement.prototype.scrollIntoView = () => {};
+  HTMLElement.prototype.scrollIntoView = function scrollIntoViewMock() {
+    // jsdom mock - no behavior required for tests
+    return undefined;
+  };
 }
-

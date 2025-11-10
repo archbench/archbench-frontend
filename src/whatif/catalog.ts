@@ -231,12 +231,30 @@ const describeIndexWhatIf = (scenario: Scenario): WhatIf | null => {
   };
 };
 
-export const getWhatIfs = (scenario: Scenario, _result: SimulationResult): WhatIf[] => {
+export const getWhatIfs = (scenario: Scenario, result: SimulationResult): WhatIf[] => {
+  const workload = scenario.workload;
+  const latencyNeedsHelp =
+    workload?.p95TargetMs !== undefined ? result.latencyMsP95 > workload.p95TargetMs : true;
+  const throughputNeedsHelp =
+    workload?.rps !== undefined ? result.throughputRps < workload.rps : true;
+
   const suggestions: (WhatIf | null)[] = [
+    latencyNeedsHelp ? describeCacheWhatIf(scenario) : null,
+    throughputNeedsHelp ? describeQueueWhatIf(scenario) : null,
+    throughputNeedsHelp ? describeReplicaWhatIf(scenario) : null,
+    latencyNeedsHelp ? describeIndexWhatIf(scenario) : null,
+  ];
+
+  const fallbackSuggestions: (WhatIf | null)[] = [
     describeCacheWhatIf(scenario),
     describeQueueWhatIf(scenario),
     describeReplicaWhatIf(scenario),
     describeIndexWhatIf(scenario),
   ];
-  return suggestions.filter((item): item is WhatIf => Boolean(item));
+
+  const filtered = suggestions.filter((item): item is WhatIf => Boolean(item));
+  if (filtered.length > 0) {
+    return filtered;
+  }
+  return fallbackSuggestions.filter((item): item is WhatIf => Boolean(item));
 };
