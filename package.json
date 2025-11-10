@@ -11,6 +11,8 @@
     "test": "vitest --run",
     "test:ui": "vitest --ui",
     "e2e": "playwright test",
+    "e2e:remote": "E2E_BASE_URL=$E2E_BASE_URL playwright test",
+    "e2e:skip": "SKIP_E2E=1 playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:report": "playwright show-report"
   },

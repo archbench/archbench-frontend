@@ -13,6 +13,21 @@
 
 GitHub Actions workflow `.github/workflows/fe-ci.yml` runs Vitest + Playwright on every push / PR, installs browser dependencies, and uploads HTML reports plus raw test artifacts.
 
+### E2E in ambienti senza bind di porte
+
+- Avvia l'app altrove (host locale, preview, ecc.) e punta Playwright al nuovo endpoint:
+
+  ```bash
+  export E2E_BASE_URL=http://localhost:5173
+  npm run e2e:remote
+  ```
+
+- Se vuoi saltare gli e2e in un ambiente bloccato:
+
+  ```bash
+  npm run e2e:skip
+  ```
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
