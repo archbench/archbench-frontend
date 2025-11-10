@@ -19,7 +19,7 @@ export default function RubricPanel({ scenario, result }: Props) {
   }
 
   return (
-    <Card>
+    <Card data-testid="rubric-panel">
       <CardHeader className="pb-4">
         <CardTitle className="text-base">Grading Rubric</CardTitle>
         <p className="text-sm text-muted">How the engine scored this scenario.</p>
@@ -37,4 +37,3 @@ export default function RubricPanel({ scenario, result }: Props) {
     </Card>
   );
 }
-

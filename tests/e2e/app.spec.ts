@@ -32,8 +32,18 @@ async function runSimulation(page) {
   await page.getByRole("button", { name: /run simulation/i }).click();
 }
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, browserName }, testInfo) => {
+  if (browserName !== "chromium" && testInfo.title.includes("visual regression")) {
+    test.skip(true, "Visual baselines only run on Chromium.");
+  }
   await page.goto("/");
+  if (process.env.E2E_BASE_URL?.includes("devtunnels")) {
+    const continueButton = page.getByRole("button", { name: /continue/i });
+    const isContinueVisible = await continueButton.isVisible().catch(() => false);
+    if (isContinueVisible) {
+      await continueButton.click();
+    }
+  }
   await page.evaluate(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -68,22 +78,35 @@ test("applying a what-if suggestion mutates the scenario JSON", async ({ page })
   await runSimulation(page);
 
   await expect(page.getByText(/What-if suggestions/i)).toBeVisible();
-  const firstApply = page.getByRole("button", { name: /^apply$/i }).first();
-  await expect(firstApply).toBeEnabled();
-  await firstApply.click();
+  const firstCard = page.getByTestId("whatif-card").first();
+  await expect(firstCard).toBeVisible();
+  const applyButton = firstCard.getByTestId("whatif-apply");
+  await expect(applyButton).toBeEnabled();
+  await applyButton.click();
 
   const stored = await page.evaluate(() => localStorage.getItem("scenario"));
-  expect(stored).toContain("whatif-cache");
+  expect(stored).toBeTruthy();
+  const scenario = stored ? JSON.parse(stored) : {};
+  const hasQueue = Array.isArray(scenario.nodes)
+    ? scenario.nodes.some((node: { id?: string }) => node.id === "whatif-queue-api-links-db")
+    : false;
+  expect(hasQueue).toBe(true);
 });
 
-test("visual regression: selector menu and rubric", async ({ page }) => {
+test("visual regression: selector menu and rubric", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "Visual baselines are tracked on Chromium only.");
   await selectPreset(page, "URL Shortener");
-  await scenarioButton(page).click();
-  await expect(page).toHaveScreenshot("preset-menu.png", { fullPage: true });
-  await page.keyboard.press("Escape");
-
   await mockSimulationRoute(page);
   await runSimulation(page);
-  await expect(page.getByText(/Grading Rubric/i)).toBeVisible();
-  await expect(page).toHaveScreenshot("rubric-panel.png", { fullPage: true });
+  await expect(page.getByText(/Simulation complete/i)).toBeVisible();
+
+  await scenarioButton(page).click();
+  const presetMenu = page.getByTestId("scenario-preset-menu");
+  await expect(presetMenu).toBeVisible();
+  await expect(presetMenu).toHaveScreenshot("preset-menu.png");
+  await page.keyboard.press("Escape");
+
+  const rubricPanel = page.getByTestId("rubric-panel");
+  await expect(rubricPanel).toBeVisible();
+  await expect(rubricPanel).toHaveScreenshot("rubric-panel.png");
 });

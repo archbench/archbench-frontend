@@ -54,7 +54,11 @@ export default function WhatIfList({ scenario, result, onScenarioChange }: Props
         {suggestions.map((suggestion) => {
           const applied = suggestion.isApplied ? suggestion.isApplied(scenario) : false;
           return (
-            <div key={suggestion.id} className="rounded-lg border border-border/60 p-4 dark:border-borderDark">
+            <div
+              key={suggestion.id}
+              data-testid="whatif-card"
+              className="rounded-lg border border-border/60 p-4 dark:border-borderDark"
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Badge
@@ -72,6 +76,7 @@ export default function WhatIfList({ scenario, result, onScenarioChange }: Props
                   onClick={() => (applied ? handleRevert(suggestion) : handleApply(suggestion))}
                   aria-label={applied ? `Revert ${suggestion.title}` : `Apply ${suggestion.title}`}
                   disabled={applied && !suggestion.revert}
+                  data-testid="whatif-apply"
                 >
                   {applied ? "Revert" : "Apply"}
                 </Button>

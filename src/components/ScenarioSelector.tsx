@@ -163,6 +163,7 @@ export default function ScenarioSelector({ presets, activeSlug, onSelect }: Prop
           </PopoverTrigger>
           <PopoverPortal>
             <PopoverContent
+              data-testid="scenario-preset-menu"
               className="fixed z-overlay w-[var(--ab-selector-width,16rem)] max-h-[60vh] overflow-hidden rounded-md border border-border/60 bg-surface p-0 shadow-lg dark:border-borderDark/60 dark:bg-zinc-900"
               align="start"
               side="bottom"
