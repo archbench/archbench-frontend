@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const mockResult = {
   latencyMsP50: 12,
@@ -10,8 +10,10 @@ const mockResult = {
   hints: ["Add cache"],
 };
 
+const scenarioButton = (page: Page) => page.locator('button[aria-haspopup="listbox"]').first();
+
 async function selectPreset(page, name: string) {
-  await page.getByRole("button", { name: /select scenario/i }).click();
+  await scenarioButton(page).click();
   await page.getByPlaceholder("Search presets...").fill(name);
   await page.getByText(name, { exact: true }).click();
 }
@@ -65,7 +67,9 @@ test("applying a what-if suggestion mutates the scenario JSON", async ({ page })
   await mockSimulationRoute(page);
   await runSimulation(page);
 
+  await expect(page.getByText(/What-if suggestions/i)).toBeVisible();
   const firstApply = page.getByRole("button", { name: /^apply$/i }).first();
+  await expect(firstApply).toBeEnabled();
   await firstApply.click();
 
   const stored = await page.evaluate(() => localStorage.getItem("scenario"));
@@ -74,7 +78,7 @@ test("applying a what-if suggestion mutates the scenario JSON", async ({ page })
 
 test("visual regression: selector menu and rubric", async ({ page }) => {
   await selectPreset(page, "URL Shortener");
-  await page.getByRole("button", { name: /select scenario/i }).click();
+  await scenarioButton(page).click();
   await expect(page).toHaveScreenshot("preset-menu.png", { fullPage: true });
   await page.keyboard.press("Escape");
 
@@ -83,4 +87,3 @@ test("visual regression: selector menu and rubric", async ({ page }) => {
   await expect(page.getByText(/Grading Rubric/i)).toBeVisible();
   await expect(page).toHaveScreenshot("rubric-panel.png", { fullPage: true });
 });
-
