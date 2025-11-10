@@ -6,6 +6,7 @@ type Props = {
   status: RunStatus;
   statusMessage: string;
   activeView: "editor" | "library";
+  docsOpen: boolean;
   onCheckEngine: () => void;
   onRun: () => void;
   onNewScenario: () => void;
@@ -13,6 +14,7 @@ type Props = {
   onSaveSnapshotB: () => void;
   onCompare: () => void;
   onViewChange: (view: "editor" | "library") => void;
+  onToggleDocs: () => void;
 };
 
 export default function Toolbar({
@@ -20,6 +22,7 @@ export default function Toolbar({
   status,
   statusMessage,
   activeView,
+  docsOpen,
   onCheckEngine,
   onRun,
   onNewScenario,
@@ -27,6 +30,7 @@ export default function Toolbar({
   onSaveSnapshotB,
   onCompare,
   onViewChange,
+  onToggleDocs,
 }: Props) {
   return (
     <div className="z-toolbar w-full border-b border-border bg-surface px-6 py-3 dark:border-borderDark dark:bg-surfaceDark">
@@ -35,23 +39,43 @@ export default function Toolbar({
           <Button onClick={onCheckEngine} variant="secondary">
             Check Engine
           </Button>
-          <Button onClick={onRun} variant="primary">
+          <Button onClick={onRun} variant="primary" title="Run Simulation (R)">
             Run Simulation
           </Button>
-          <Button onClick={onNewScenario} variant="secondary">
+          <Button onClick={onNewScenario} variant="secondary" title="New Scenario (N)">
             New Scenario
           </Button>
-          <Button onClick={onSaveSnapshotA} disabled={disableSave} variant="secondary">
+          <Button
+            onClick={onSaveSnapshotA}
+            disabled={disableSave}
+            variant="secondary"
+            title="Save Snapshot A (1)"
+          >
             Save Snapshot A
           </Button>
-          <Button onClick={onSaveSnapshotB} disabled={disableSave} variant="secondary">
+          <Button
+            onClick={onSaveSnapshotB}
+            disabled={disableSave}
+            variant="secondary"
+            title="Save Snapshot B (2)"
+          >
             Save Snapshot B
           </Button>
-          <Button onClick={onCompare} variant="secondary">
+          <Button onClick={onCompare} variant="secondary" title="Compare Snapshots (C)">
             Compare
           </Button>
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            type="button"
+            variant={docsOpen ? "primary" : "secondary"}
+            onClick={onToggleDocs}
+            aria-pressed={docsOpen}
+            aria-label="Toggle docs pane"
+            title="Docs pane"
+          >
+            Docs
+          </Button>
           <Button
             type="button"
             variant={activeView === "library" ? "primary" : "ghost"}

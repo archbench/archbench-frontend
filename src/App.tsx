@@ -6,6 +6,7 @@ import ScoreCard from './components/Metrics/ScoreCard';
 import HintsList from './components/Metrics/HintsList';
 import RubricPanel from './components/Grading/RubricPanel';
 import WhatIfList from './components/Grading/WhatIfList';
+import DocsPane from './components/Docs/DocsPane';
 import ErrorBanner from './components/ErrorBanner';
 import './App.css'
 import { getHealth, simulate } from './api/client';
@@ -59,6 +60,7 @@ function App() {
   const compareRef = useRef<HTMLDivElement | null>(null);
   const [libraryState, setLibraryState] = useState<LibraryState>(() => loadProgress());
   const [activeView, setActiveView] = useState<AppView>(() => getInitialView());
+  const [docsOpen, setDocsOpen] = useState(false);
 
   useEffect(() => {
     setSnapshotA(loadSnapshot(SNAP_A_KEY));
@@ -92,7 +94,7 @@ function App() {
     }
   }, [activeView]);
 
-  const checkEngine = async () => {
+  const checkEngine = useCallback(async () => {
     try {
       const text = await getHealth();
       if (text.toLowerCase() === "ok") {
@@ -103,9 +105,9 @@ function App() {
     } catch {
       setEngineStatus("Engine unreachable");
     }
-  };
+  }, []);
 
-  const runSimulation = async () => {
+  const runSimulation = useCallback(async () => {
     setRunStatus("running");
     setRunMessage("Running simulation…");
     try {
@@ -136,56 +138,64 @@ function App() {
       }
       setSimulationResult(null);
     }
-  };
+  }, [scenarioJson, activePresetSlug]);
 
-  const handleNewScenario = () => {
+  const handleNewScenario = useCallback(() => {
     persistScenario(JSON.stringify(BLANK_SCENARIO, null, 2));
     setSimulationResult(null);
     setError(null);
     setRunStatus("idle");
     setRunMessage("Ready");
-  };
+  }, [persistScenario]);
 
-  const handleSelectPreset = (presetSlug: string) => {
-    if (scenario?.name === presetSlug) {
-      return;
-    }
-    const preset = PRESETS.find((item) => item.meta.slug === presetSlug);
-    if (!preset) {
-      return;
-    }
-    persistScenario(JSON.stringify(preset.scenario, null, 2));
-    setSimulationResult(null);
-    setError(null);
-    setRunStatus("idle");
-    setRunMessage("Ready");
-  };
-
-  const saveSnapshotForKey = (
-    key: string,
-    setter: Dispatch<SetStateAction<Snapshot | null>>
-  ) => {
-    if (!simulationResult) {
-      return;
-    }
-    try {
-      const parsed = JSON.parse(scenarioJson) as Scenario;
-      const snap: Snapshot = {
-        name: parsed.name || "Unnamed",
-        scenario: parsed,
-        result: simulationResult,
-        savedAt: new Date().toISOString(),
-      };
-      saveSnapshot(key, snap);
-      setter(snap);
-    } catch (err) {
-      if (err instanceof SyntaxError) {
-        window.alert("Scenario JSON is invalid. Fix the editor before saving a snapshot.");
-      } else {
-        console.error("Failed to save snapshot", err);
+  const handleSelectPreset = useCallback(
+    (presetSlug: string) => {
+      const preset = PRESETS.find((item) => item.meta.slug === presetSlug);
+      if (!preset) {
+        return;
       }
-    }
-  };
+      persistScenario(JSON.stringify(preset.scenario, null, 2));
+      setSimulationResult(null);
+      setError(null);
+      setRunStatus("idle");
+      setRunMessage("Ready");
+    },
+    [persistScenario],
+  );
+
+  const saveSnapshotForKey = useCallback(
+    (key: string, setter: Dispatch<SetStateAction<Snapshot | null>>) => {
+      if (!simulationResult) {
+        return;
+      }
+      try {
+        const parsed = JSON.parse(scenarioJson) as Scenario;
+        const snap: Snapshot = {
+          name: parsed.name || "Unnamed",
+          scenario: parsed,
+          result: simulationResult,
+          savedAt: new Date().toISOString(),
+        };
+        saveSnapshot(key, snap);
+        setter(snap);
+      } catch (err) {
+        if (err instanceof SyntaxError) {
+          window.alert("Scenario JSON is invalid. Fix the editor before saving a snapshot.");
+        } else {
+          console.error("Failed to save snapshot", err);
+        }
+      }
+    },
+    [scenarioJson, simulationResult],
+  );
+
+  const handleSaveSnapshotA = useCallback(() => {
+    saveSnapshotForKey(SNAP_A_KEY, setSnapshotA);
+  }, [saveSnapshotForKey]);
+
+  const handleSaveSnapshotB = useCallback(() => {
+    saveSnapshotForKey(SNAP_B_KEY, setSnapshotB);
+  }, [saveSnapshotForKey]);
 
   const restoreSnapshot = (snap: Snapshot | null) => {
     if (!snap) {
@@ -197,16 +207,19 @@ function App() {
     setError(null);
   };
 
-  const handleCompareClick = () => {
+  const handleCompareClick = useCallback(() => {
     compareRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   const disableSave = !simulationResult;
 
-  const handleLibraryLoad = (slug: string) => {
-    handleSelectPreset(slug);
-    setActiveView("editor");
-  };
+  const handleLibraryLoad = useCallback(
+    (slug: string) => {
+      handleSelectPreset(slug);
+      setActiveView("editor");
+    },
+    [handleSelectPreset],
+  );
 
   const handleToggleSolved = (slug: string, solved: boolean) => {
     const updated = setSolved(slug, solved);
@@ -326,48 +339,58 @@ function App() {
   );
 
   return (
-    <AppShell
-      header={
-        <>
-          <Header
-            scenarioName={scenarioName}
-            centerSlot={
-              <ScenarioSelector
-                presets={PRESETS}
-                activeSlug={activePresetSlug}
-                onSelect={handleSelectPreset}
-              />
-            }
+    <>
+      <AppShell
+        header={
+          <>
+            <Header
+              scenarioName={scenarioName}
+              centerSlot={
+                <ScenarioSelector
+                  presets={PRESETS}
+                  activeSlug={activePresetSlug}
+                  onSelect={handleSelectPreset}
+                />
+              }
+            />
+            <Toolbar
+              disableSave={disableSave}
+              status={runStatus}
+              statusMessage={runMessage}
+              activeView={activeView}
+              docsOpen={docsOpen}
+              onCheckEngine={checkEngine}
+              onRun={runSimulation}
+              onNewScenario={handleNewScenario}
+              onSaveSnapshotA={handleSaveSnapshotA}
+              onSaveSnapshotB={handleSaveSnapshotB}
+              onCompare={handleCompareClick}
+              onViewChange={setActiveView}
+              onToggleDocs={() => setDocsOpen((prev) => !prev)}
+            />
+          </>
+        }
+        footer={activeView === "editor" ? editorFooter : null}
+      >
+        {activeView === "library" ? (
+          <LibraryView
+            presets={PRESETS}
+            progress={libraryState}
+            onLoadPreset={handleLibraryLoad}
+            onToggleSolved={handleToggleSolved}
+            onImportProgress={handleImportProgress}
           />
-          <Toolbar
-            disableSave={disableSave}
-            status={runStatus}
-            statusMessage={runMessage}
-            activeView={activeView}
-            onCheckEngine={checkEngine}
-            onRun={runSimulation}
-            onNewScenario={handleNewScenario}
-            onSaveSnapshotA={() => saveSnapshotForKey(SNAP_A_KEY, setSnapshotA)}
-            onSaveSnapshotB={() => saveSnapshotForKey(SNAP_B_KEY, setSnapshotB)}
-            onCompare={handleCompareClick}
-            onViewChange={setActiveView}
-          />
-        </>
-      }
-      footer={activeView === "editor" ? editorFooter : null}
-    >
-      {activeView === "library" ? (
-        <LibraryView
-          presets={PRESETS}
-          progress={libraryState}
-          onLoadPreset={handleLibraryLoad}
-          onToggleSolved={handleToggleSolved}
-          onImportProgress={handleImportProgress}
-        />
-      ) : (
-        editorBody
-      )}
-    </AppShell>
+        ) : (
+          editorBody
+        )}
+      </AppShell>
+      <DocsPane
+        open={docsOpen}
+        onOpenChange={setDocsOpen}
+        preset={activePreset}
+        onLoadPreset={handleSelectPreset}
+      />
+    </>
   )
 }
 
