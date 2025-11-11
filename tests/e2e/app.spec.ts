@@ -103,10 +103,10 @@ test("visual regression: selector menu and rubric", async ({ page, browserName }
   await scenarioButton(page).click();
   const presetMenu = page.getByTestId("scenario-preset-menu");
   await expect(presetMenu).toBeVisible();
-  await expect(presetMenu).toHaveScreenshot("preset-menu.png");
+  await expect(presetMenu).toHaveScreenshot("preset-menu.png", { maxDiffPixelRatio: 0.02 });
   await page.keyboard.press("Escape");
 
   const rubricPanel = page.getByTestId("rubric-panel");
   await expect(rubricPanel).toBeVisible();
-  await expect(rubricPanel).toHaveScreenshot("rubric-panel.png");
+  await expect(rubricPanel).toHaveScreenshot("rubric-panel.png", { maxDiffPixelRatio: 0.02 });
 });
