@@ -129,6 +129,43 @@ test("database inspector updates tables and indexes", async ({ page }) => {
   expect(jsonValue).toContain('"events_idx"');
 });
 
+test("overlay compare highlights node deltas", async ({ page, browserName }) => {
+  await selectPreset(page, "URL Shortener");
+  await mockSimulationRoute(page);
+  await runSimulation(page);
+  await page.getByRole("button", { name: /save snapshot a/i }).click();
+
+  await page.getByRole("tab", { name: /json/i }).click();
+  const jsonEditor = page.getByLabel("Scenario JSON");
+  const baseJson = await jsonEditor.inputValue();
+  const updatedJson = await page.evaluate((raw) => {
+    const parsed = JSON.parse(raw);
+    const apiNode = parsed.nodes?.find((node: { id?: string }) => node.id === "api");
+    if (apiNode) {
+      apiNode.capacityRps = 4000;
+      apiNode.latencyMs = 22;
+    }
+    return JSON.stringify(parsed, null, 2);
+  }, baseJson);
+  await jsonEditor.fill(updatedJson);
+  await page.getByRole("tab", { name: /^node$/i }).click();
+
+  await runSimulation(page);
+  await page.getByRole("button", { name: /save snapshot b/i }).click();
+
+  const overlayToggle = page.getByRole("button", { name: /overlay compare/i });
+  await overlayToggle.click();
+
+  const deltaChip = page.getByTestId("node-overlay-api-dCapacityRps");
+  await expect(deltaChip).toBeVisible();
+  await expect(deltaChip).toContainText("Δrps");
+  await expect(page.getByText(/overlay legend/i)).toBeVisible();
+
+  if (browserName === "chromium") {
+    await expect(page.locator(".react-flow")).toHaveScreenshot("compare-overlay.png", { maxDiffPixelRatio: 0.03 });
+  }
+});
+
 test("visual regression: selector menu and rubric", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "Visual baselines are tracked on Chromium only.");
   await selectPreset(page, "URL Shortener");

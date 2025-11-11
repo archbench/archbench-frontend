@@ -32,6 +32,8 @@ import { bumpAttempt, loadProgress, replaceProgressState, setSolved } from './ut
 import type { LibraryState } from './types/progress';
 import LibraryView from './views/Library';
 import { useHotkeys } from './hooks/useHotkeys';
+import { buildNodeDeltas, type NodeDelta } from './compare/diff';
+import type { CompareOverlayMode } from './types/compare';
 
 const SOLVED_SCORE_THRESHOLD = 80;
 const VIEW_STORAGE_KEY = "archbench:view:last";
@@ -63,11 +65,26 @@ function App() {
   const [activeView, setActiveView] = useState<AppView>(() => getInitialView());
   const [docsOpen, setDocsOpen] = useState(false);
   const [isWorkloadValid, setIsWorkloadValid] = useState(true);
+  const [compareOverlay, setCompareOverlay] = useState<CompareOverlayMode>("off");
+  const [nodeDeltas, setNodeDeltas] = useState<NodeDelta[]>([]);
 
   useEffect(() => {
     setSnapshotA(loadSnapshot(SNAP_A_KEY));
     setSnapshotB(loadSnapshot(SNAP_B_KEY));
   }, []);
+
+  useEffect(() => {
+    if (compareOverlay !== "A-vs-B") {
+      setNodeDeltas([]);
+      return;
+    }
+    if (!snapshotA || !snapshotB) {
+      setCompareOverlay("off");
+      setNodeDeltas([]);
+      return;
+    }
+    setNodeDeltas(buildNodeDeltas(snapshotA.scenario, snapshotB.scenario));
+  }, [compareOverlay, snapshotA, snapshotB]);
 
   const persistScenario = useCallback((json: string) => {
     setScenarioJson(json);
@@ -213,6 +230,14 @@ function App() {
     compareRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
+  const handleToggleOverlay = useCallback(() => {
+    if (!snapshotA || !snapshotB) {
+      window.alert("Save both snapshots A and B before enabling the overlay compare.");
+      return;
+    }
+    setCompareOverlay((prev) => (prev === "off" ? "A-vs-B" : "off"));
+  }, [snapshotA, snapshotB]);
+
   const disableSave = !simulationResult;
 
   const handleLibraryLoad = useCallback(
@@ -270,6 +295,13 @@ function App() {
         },
         enabled: activeView === "editor",
       },
+      {
+        key: "o",
+        handler: () => {
+          handleToggleOverlay();
+        },
+        enabled: activeView === "editor",
+      },
     ],
     [
       runSimulation,
@@ -277,6 +309,7 @@ function App() {
       handleSaveSnapshotA,
       handleSaveSnapshotB,
       handleCompareClick,
+      handleToggleOverlay,
       activeView,
       simulationResult,
     ],
@@ -339,6 +372,8 @@ function App() {
           <Board
             scenarioJson={scenarioJson}
             onScenarioChange={persistScenario}
+            compareOverlay={compareOverlay}
+            nodeDeltas={nodeDeltas}
           />
         </section>
 
@@ -419,6 +454,9 @@ function App() {
               onSaveSnapshotA={handleSaveSnapshotA}
               onSaveSnapshotB={handleSaveSnapshotB}
               onCompare={handleCompareClick}
+              compareOverlay={compareOverlay}
+              overlayEnabled={Boolean(snapshotA && snapshotB)}
+              onToggleOverlay={handleToggleOverlay}
               onViewChange={setActiveView}
               onToggleDocs={() => setDocsOpen((prev) => !prev)}
               disableRun={!isWorkloadValid}

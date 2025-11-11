@@ -1,5 +1,6 @@
 import Button from "./Button";
 import StatusPill, { type RunStatus } from "./StatusPill";
+import type { CompareOverlayMode } from "@/types/compare";
 
 type Props = {
   disableSave: boolean;
@@ -14,6 +15,9 @@ type Props = {
   onSaveSnapshotA: () => void;
   onSaveSnapshotB: () => void;
   onCompare: () => void;
+  compareOverlay: CompareOverlayMode;
+  overlayEnabled: boolean;
+  onToggleOverlay: () => void;
   onViewChange: (view: "editor" | "library") => void;
   onToggleDocs: () => void;
 };
@@ -31,9 +35,13 @@ export default function Toolbar({
   onSaveSnapshotA,
   onSaveSnapshotB,
   onCompare,
+  compareOverlay,
+  overlayEnabled,
+  onToggleOverlay,
   onViewChange,
   onToggleDocs,
 }: Props) {
+  const overlayActive = compareOverlay === "A-vs-B";
   return (
     <div className="z-toolbar w-full border-b border-border bg-surface px-6 py-3 dark:border-borderDark dark:bg-surfaceDark">
       <div className="flex w-full flex-wrap items-center gap-2">
@@ -70,6 +78,18 @@ export default function Toolbar({
           </Button>
           <Button onClick={onCompare} variant="secondary" title="Compare Snapshots (C)">
             Compare
+          </Button>
+          <Button
+            onClick={onToggleOverlay}
+            variant="secondary"
+            title="Overlay Compare (O)"
+            aria-pressed={overlayActive}
+            data-state={overlayActive ? "on" : "off"}
+            disabled={!overlayEnabled}
+            className="data-[state=on]:border-primary data-[state=on]:text-primary"
+            aria-label="Overlay Compare toggle"
+          >
+            Overlay Compare
           </Button>
         </div>
         <div className="ml-auto flex items-center gap-2">

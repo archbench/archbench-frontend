@@ -17,12 +17,18 @@ import type {
 } from "reactflow";
 import "reactflow/dist/style.css";
 
-import type { Scenario, NodeType } from "../types/api";
-import { safeParse } from "../utils/json";
+import type { Scenario, NodeType } from "@/types/api";
+import type { CompareOverlayMode } from "@/types/compare";
+import type { NodeDelta } from "@/compare/diff";
+import { safeParse } from "@/utils/json";
+import BoardNode, { type BoardNodeData } from "./Board/BoardNode";
+import OverlayLegend from "./Board/OverlayLegend";
 
 type Props = {
   scenarioJson: string;
   onScenarioChange: (nextJson: string) => void;
+  compareOverlay: CompareOverlayMode;
+  nodeDeltas?: NodeDelta[];
 };
 
 const palette: { type: NodeType; label: string }[] = [
@@ -35,11 +41,20 @@ const palette: { type: NodeType; label: string }[] = [
 
 type Position = { x: number; y: number };
 
-export default function Board({ scenarioJson, onScenarioChange }: Props) {
+const nodeTypes = { board: BoardNode };
+
+export default function Board({ scenarioJson, onScenarioChange, compareOverlay, nodeDeltas }: Props) {
   const scenario = useMemo(() => safeParse<Scenario>(scenarioJson), [scenarioJson]);
   const [nodes, setNodes] = useState<RFNode[]>([]);
   const [edges, setEdges] = useState<RFEdge[]>([]);
   const cachedPositions = useRef<Record<string, Position>>({});
+  const deltaMap = useMemo(() => {
+    const map = new Map<string, NodeDelta>();
+    (nodeDeltas ?? []).forEach((delta) => {
+      map.set(delta.id, delta);
+    });
+    return map;
+  }, [nodeDeltas]);
 
   const updateScenario = useCallback(
     (mutator: (draft: Scenario) => void) => {
@@ -68,11 +83,16 @@ export default function Board({ scenarioJson, onScenarioChange }: Props) {
           previousPositions.get(node.id) ??
           gridPosition(index);
         cachedPositions.current[node.id] = storedPosition;
+        const delta = deltaMap.get(node.id);
         return {
           id: node.id,
-          type: "default",
+          type: "board",
           position: storedPosition,
-          data: { label: node.id },
+          data: {
+            label: node.id,
+            delta,
+            compareOverlay,
+          } satisfies BoardNodeData,
           draggable: true,
           selectable: true,
         };
@@ -94,7 +114,7 @@ export default function Board({ scenarioJson, onScenarioChange }: Props) {
         };
       });
     });
-  }, [scenario]);
+  }, [scenario, compareOverlay, deltaMap]);
 
   const commitEdgesToScenario = useCallback(
     (nextEdges: RFEdge[]) => {
@@ -252,6 +272,7 @@ export default function Board({ scenarioJson, onScenarioChange }: Props) {
           nodesDraggable
           nodesConnectable
           panOnScroll
+          nodeTypes={nodeTypes}
         >
           <Background gap={20} size={1} color="#e6e6e6" />
           <Controls />
@@ -260,6 +281,7 @@ export default function Board({ scenarioJson, onScenarioChange }: Props) {
           </Panel>
         </ReactFlow>
       </div>
+      <OverlayLegend visible={compareOverlay === "A-vs-B" && (nodeDeltas?.length ?? 0) > 0} />
     </div>
   );
 }
