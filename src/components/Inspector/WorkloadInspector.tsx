@@ -1,15 +1,61 @@
-import { useMemo } from "react";
-import { safeParse } from "../../utils/json";
-import type { Scenario } from "../../types/api";
-import { inputClass, labelClass } from "../common/formStyles";
+import { useEffect, useMemo, useState } from "react";
+import { Field, NumberInput, UnitSuffix } from "@/components/forms/Form";
+import type { Scenario, Workload } from "@/types/api";
+import { safeParse } from "@/utils/json";
+import {
+  validateWorkloadCostTarget,
+  validateWorkloadP95,
+  validateWorkloadRps,
+} from "@/utils/validators";
 
 type Props = {
   scenarioJson: string;
   onScenarioChange: (nextJson: string) => void;
+  onValidityChange?: (isValid: boolean) => void;
 };
 
-export default function WorkloadInspector({ scenarioJson, onScenarioChange }: Props) {
+type WorkloadField = keyof Workload;
+
+const FIELD_CONFIG: Record<WorkloadField, { label: string; placeholder: string; description: string; unit: string }> = {
+  rps: {
+    label: "Requests per second",
+    placeholder: "e.g. 1200",
+    description: "Target steady-state throughput.",
+    unit: "rps",
+  },
+  p95TargetMs: {
+    label: "p95 target",
+    placeholder: "e.g. 180",
+    description: "Latency budget for 95% of requests.",
+    unit: "ms",
+  },
+  costTargetPerHour: {
+    label: "Cost target (optional)",
+    placeholder: "e.g. 12",
+    description: "Budget ceiling for this workload.",
+    unit: "$/h",
+  },
+};
+
+const validators = {
+  rps: validateWorkloadRps,
+  p95TargetMs: validateWorkloadP95,
+  costTargetPerHour: validateWorkloadCostTarget,
+};
+
+export default function WorkloadInspector({ scenarioJson, onScenarioChange, onValidityChange }: Props) {
   const scenario = useMemo<Scenario | null>(() => safeParse<Scenario>(scenarioJson), [scenarioJson]);
+  const [touched, setTouched] = useState<Record<WorkloadField, boolean>>({
+    rps: false,
+    p95TargetMs: false,
+    costTargetPerHour: false,
+  });
+
+  useEffect(() => {
+    if (!scenario) {
+      onValidityChange?.(false);
+    }
+  }, [scenario, onValidityChange]);
 
   if (!scenario) {
     return (
@@ -21,57 +67,89 @@ export default function WorkloadInspector({ scenarioJson, onScenarioChange }: Pr
 
   const workload = scenario.workload ?? {};
 
-  const handleChange = (field: "rps" | "p95TargetMs", value: string) => {
+  const validation = useMemo(
+    () => ({
+      rps: validators.rps(workload.rps),
+      p95TargetMs: validators.p95TargetMs(workload.p95TargetMs),
+      costTargetPerHour: validators.costTargetPerHour(workload.costTargetPerHour),
+    }),
+    [workload.costTargetPerHour, workload.p95TargetMs, workload.rps],
+  );
+
+  const formIsValid = !validation.rps && !validation.p95TargetMs && !validation.costTargetPerHour;
+
+  useEffect(() => {
+    onValidityChange?.(formIsValid);
+  }, [formIsValid, onValidityChange]);
+
+  const handleChange = (field: WorkloadField, rawValue: string) => {
     const next = structuredClone(scenario);
-    const trimmed = value.trim();
+    const trimmed = rawValue.trim();
     if (!trimmed) {
       if (next.workload) {
         delete next.workload[field];
       }
     } else {
-      const asNumber = Number(trimmed);
-      if (Number.isNaN(asNumber)) {
+      const parsed = Number(trimmed);
+      if (Number.isNaN(parsed)) {
         if (next.workload) {
           delete next.workload[field];
         }
       } else {
-        if (!next.workload) {
-          next.workload = {};
-        }
-        next.workload[field] = asNumber;
+        next.workload = { ...(next.workload ?? {}), [field]: parsed };
       }
     }
-    if (next.workload && !next.workload.rps && !next.workload.p95TargetMs) {
+
+    if (next.workload && !Object.keys(next.workload).length) {
       delete next.workload;
     }
+
     onScenarioChange(JSON.stringify(next, null, 2));
   };
 
+  const fields = Object.keys(FIELD_CONFIG) as WorkloadField[];
+
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-text">Workload</h2>
-      <div className="flex flex-col gap-4 rounded-md border border-border bg-surface p-4 shadow-subtle dark:border-borderDark dark:bg-surfaceDark">
-        <div className="field-row flex flex-col gap-1">
-          <label className={labelClass}>Requests per second</label>
-          <input
-            type="number"
-            className={inputClass}
-            placeholder="e.g. 2500 rps"
-            value={workload.rps ?? ""}
-            onChange={(event) => handleChange("rps", event.target.value)}
-          />
-        </div>
-        <div className="field-row flex flex-col gap-1">
-          <label className={labelClass}>p95 target (ms)</label>
-          <input
-            type="number"
-            className={inputClass}
-            placeholder="e.g. 150 ms"
-            value={workload.p95TargetMs ?? ""}
-            onChange={(event) => handleChange("p95TargetMs", event.target.value)}
-          />
-        </div>
+    <div className="space-y-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">Workload target</p>
+        <p className="text-sm text-textMuted">Controls planner heuristics and disables run while invalid.</p>
       </div>
+      <section className="space-y-4 rounded-md border border-border bg-surface p-4 shadow-card dark:border-borderDark dark:bg-surfaceDark">
+        <div className="grid gap-3 md:grid-cols-2">
+          {fields.map((field) => {
+            const config = FIELD_CONFIG[field];
+            const value = workload[field];
+            const error = touched[field] ? validation[field] ?? undefined : undefined;
+            const inputId = `workload-${field}`;
+            return (
+              <Field
+                key={field}
+                label={config.label}
+                htmlFor={inputId}
+                description={config.description}
+                error={error}
+                required={field !== "costTargetPerHour"}
+              >
+                {({ describedBy }) => (
+                  <div className="relative">
+                    <NumberInput
+                      id={inputId}
+                      value={(value ?? "").toString()}
+                      placeholder={config.placeholder}
+                      aria-describedby={describedBy}
+                      invalid={Boolean(error)}
+                      onChange={(event) => handleChange(field, event.target.value)}
+                      onBlur={() => setTouched((prev) => ({ ...prev, [field]: true }))}
+                    />
+                    <UnitSuffix>{config.unit}</UnitSuffix>
+                  </div>
+                )}
+              </Field>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

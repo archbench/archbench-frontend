@@ -62,6 +62,7 @@ function App() {
   const [libraryState, setLibraryState] = useState<LibraryState>(() => loadProgress());
   const [activeView, setActiveView] = useState<AppView>(() => getInitialView());
   const [docsOpen, setDocsOpen] = useState(false);
+  const [isWorkloadValid, setIsWorkloadValid] = useState(true);
 
   useEffect(() => {
     setSnapshotA(loadSnapshot(SNAP_A_KEY));
@@ -371,6 +372,7 @@ function App() {
                   <WorkloadInspector
                     scenarioJson={scenarioJson}
                     onScenarioChange={persistScenario}
+                    onValidityChange={setIsWorkloadValid}
                   />
                 ),
               },
@@ -419,6 +421,7 @@ function App() {
               onCompare={handleCompareClick}
               onViewChange={setActiveView}
               onToggleDocs={() => setDocsOpen((prev) => !prev)}
+              disableRun={!isWorkloadValid}
             />
           </>
         }

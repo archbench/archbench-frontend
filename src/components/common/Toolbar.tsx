@@ -3,6 +3,7 @@ import StatusPill, { type RunStatus } from "./StatusPill";
 
 type Props = {
   disableSave: boolean;
+  disableRun?: boolean;
   status: RunStatus;
   statusMessage: string;
   activeView: "editor" | "library";
@@ -19,6 +20,7 @@ type Props = {
 
 export default function Toolbar({
   disableSave,
+  disableRun,
   status,
   statusMessage,
   activeView,
@@ -39,7 +41,12 @@ export default function Toolbar({
           <Button onClick={onCheckEngine} variant="secondary">
             Check Engine
           </Button>
-          <Button onClick={onRun} variant="primary" title="Run Simulation (R)">
+          <Button
+            onClick={onRun}
+            variant="primary"
+            title="Run Simulation (R)"
+            disabled={disableRun}
+          >
             Run Simulation
           </Button>
           <Button onClick={onNewScenario} variant="secondary" title="New Scenario (N)">
