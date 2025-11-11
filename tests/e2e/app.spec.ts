@@ -93,6 +93,42 @@ test("applying a what-if suggestion mutates the scenario JSON", async ({ page })
   expect(hasQueue).toBe(true);
 });
 
+test("workload inspector edits enable running simulations", async ({ page }) => {
+  await selectPreset(page, "URL Shortener");
+  await mockSimulationRoute(page);
+
+  await page.getByRole("tab", { name: /workload/i }).click();
+  await page.getByLabel("Requests per second").fill("1200");
+  await page.getByLabel("p95 target", { exact: false }).fill("180");
+
+  await runSimulation(page);
+  await expect(page.getByTestId("rubric-panel")).toBeVisible();
+});
+
+test("database inspector updates tables and indexes", async ({ page }) => {
+  await selectPreset(page, "URL Shortener");
+  await page.getByRole("tab", { name: /database/i }).click();
+
+  await page.getByRole("button", { name: /^Add table$/i }).first().click();
+
+  const newTableName = page.getByLabel("Table name", { exact: false }).last();
+  await newTableName.fill("events");
+
+  await page.getByRole("button", { name: /^Add column$/i }).last().click();
+  await page.getByLabel("Column name").fill("event_id");
+  await page.getByRole("combobox", { name: /type/i }).selectOption("string");
+  await page.getByRole("dialog", { name: /add column/i }).getByRole("button", { name: /^Add column$/i }).click();
+
+  await page.getByRole("button", { name: /^Add index$/i }).last().click();
+  await page.getByLabel("Index name").fill("events_idx");
+  await page.getByRole("dialog", { name: /add index/i }).getByRole("button", { name: /^Add index$/i }).click();
+
+  await page.getByRole("tab", { name: /json/i }).click();
+  const jsonValue = await page.getByLabel("Scenario JSON").inputValue();
+  expect(jsonValue).toContain('"name": "events"');
+  expect(jsonValue).toContain('"events_idx"');
+});
+
 test("visual regression: selector menu and rubric", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "Visual baselines are tracked on Chromium only.");
   await selectPreset(page, "URL Shortener");

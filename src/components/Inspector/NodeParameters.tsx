@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Node, Scenario } from "@/types/api";
 import { safeParse } from "@/utils/json";
 import {
@@ -62,11 +62,31 @@ const FIELD_CONFIG: Record<NumericField, FieldConfig> = {
   },
 };
 
-type ErrorMap = Record<string, string>;
-
 export default function NodeParameters({ scenarioJson, onScenarioChange }: Props) {
   const scenario = useMemo<Scenario | null>(() => safeParse<Scenario>(scenarioJson), [scenarioJson]);
-  const [errors, setErrors] = useState<ErrorMap>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [draftValues, setDraftValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setDraftValues((prev) => (Object.keys(prev).length ? {} : prev));
+  }, [scenarioJson]);
+
+  const setDraftValue = (key: string, value?: string) => {
+    setDraftValues((prev) => {
+      if (value === undefined) {
+        if (!(key in prev)) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      if (prev[key] === value) {
+        return prev;
+      }
+      return { ...prev, [key]: value };
+    });
+  };
 
   if (!scenario) {
     return (
@@ -79,51 +99,42 @@ export default function NodeParameters({ scenarioJson, onScenarioChange }: Props
   const nodes = scenario.nodes ?? [];
 
   const handleNumericChange = (nodeIndex: number, field: NumericField, rawValue: string) => {
-    const next = structuredClone(scenario);
-    const node = next.nodes[nodeIndex];
+    const node = scenario.nodes?.[nodeIndex];
     if (!node) {
       return;
     }
-
+    const errorKey = getErrorKey(nodeIndex, field);
+    setDraftValue(errorKey, rawValue);
     const trimmed = rawValue.trim();
+
     if (!trimmed) {
+      const next = structuredClone(scenario);
+      const current = next.nodes[nodeIndex];
+      if (!current) {
+        return;
+      }
       const updated: Node = { ...node };
       delete updated[field];
       next.nodes[nodeIndex] = updated;
-    } else {
-      const numericValue = Number(trimmed);
-      if (Number.isNaN(numericValue)) {
-        const updated: Node = { ...node };
-        delete updated[field];
-        next.nodes[nodeIndex] = updated;
-      } else {
-        next.nodes[nodeIndex] = { ...node, [field]: numericValue };
-      }
-    }
-
-    onScenarioChange(JSON.stringify(next, null, 2));
-  };
-
-  const handleBlur = (nodeIndex: number, field: NumericField, rawValue: string) => {
-    const trimmed = rawValue.trim();
-    const errorKey = getErrorKey(nodeIndex, field);
-
-    if (trimmed && Number.isNaN(Number(trimmed))) {
-      setErrors((prev) => ({ ...prev, [errorKey]: "Enter a valid number." }));
+      onScenarioChange(JSON.stringify(next, null, 2));
+      setDraftValue(errorKey, undefined);
       return;
     }
 
-    const validator = FIELD_CONFIG[field].validator;
-    const numericValue = trimmed ? Number(trimmed) : undefined;
-    const message = validator ? validator(numericValue) : null;
+    const numericValue = Number(trimmed);
+    if (Number.isNaN(numericValue)) {
+      return;
+    }
 
-    setErrors((prev) => {
-      if (!message) {
-        const { [errorKey]: _removed, ...rest } = prev;
-        return rest;
-      }
-      return { ...prev, [errorKey]: message };
-    });
+    const next = structuredClone(scenario);
+    next.nodes[nodeIndex] = { ...node, [field]: numericValue };
+    onScenarioChange(JSON.stringify(next, null, 2));
+    setDraftValue(errorKey, undefined);
+  };
+
+  const handleBlur = (nodeIndex: number, field: NumericField) => {
+    const errorKey = getErrorKey(nodeIndex, field);
+    setTouched((prev) => ({ ...prev, [errorKey]: true }));
   };
 
   if (!nodes.length) {
@@ -157,7 +168,10 @@ export default function NodeParameters({ scenarioJson, onScenarioChange }: Props
                 const value = node[field];
                 const inputId = `${node.id ?? nodeIndex}-${field}`;
                 const errorKey = getErrorKey(nodeIndex, field);
-                const error = errors[errorKey];
+                const draftValue = draftValues[errorKey];
+                const numericValue = typeof value === "number" ? value : undefined;
+                const validator = FIELD_CONFIG[field].validator;
+                const error = touched[errorKey] ? validator?.(numericValue) ?? null : null;
                 return (
                   <Field
                     key={field}
@@ -170,10 +184,10 @@ export default function NodeParameters({ scenarioJson, onScenarioChange }: Props
                       <div className="relative">
                         <NumberInput
                           id={inputId}
-                          value={(value ?? "").toString()}
+                          value={draftValue ?? (value ?? "").toString()}
                           placeholder={config.placeholder}
                           onChange={(event) => handleNumericChange(nodeIndex, field, event.target.value)}
-                          onBlur={(event) => handleBlur(nodeIndex, field, event.target.value)}
+                          onBlur={() => handleBlur(nodeIndex, field)}
                           aria-describedby={describedBy}
                           invalid={Boolean(error)}
                         />

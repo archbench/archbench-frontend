@@ -451,7 +451,7 @@ export default function DbInspector({ scenarioJson, onScenarioChange }: Props) {
                 onChange={(event) => {
                   setIndexDraft(event.target.value);
                   setIndexError(null);
-                })}
+                }}
               />
             )}
           </Field>
