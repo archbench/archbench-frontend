@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
-import NodeParameters from './components/NodeParameters';
+import NodeParameters from './components/Inspector/NodeParameters';
 import MetricsCards from './components/MetricsCards';
 import ScoreCard from './components/Metrics/ScoreCard';
 import HintsList from './components/Metrics/HintsList';
